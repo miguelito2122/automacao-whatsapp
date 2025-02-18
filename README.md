@@ -3,7 +3,6 @@
 ## Descrição
 
 - Este projeto automatiza o envio e recebimento de mensagens no WhatsApp para coletar avaliações. As mensagens são processadas por uma IA e os resultados são atualizados em uma planilha Excel.
----
 
 ## Funcionalidades
 
