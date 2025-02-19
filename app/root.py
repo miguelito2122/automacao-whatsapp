@@ -76,7 +76,12 @@ def carregar_imagens():
     imagem_refresh = imagem_refresh.resize((24, 24), Image.Resampling.LANCZOS)
     icone_refresh = ImageTk.PhotoImage(imagem_refresh)
 
-    return icone_refresh, icone_show, icone_upload, icone_whatsapp
+    # Carrega e redimensiona a imagem de visualização (arquivo PNG)
+    imagem_send = Image.open('data/send.png')
+    imagem_send = imagem_send.resize((24, 24), Image.Resampling.LANCZOS)
+    icone_send = ImageTk.PhotoImage(imagem_send)
+
+    return icone_refresh, icone_show, icone_upload, icone_whatsapp, icone_send
 def centralizar_tela(tela):
     tela.update_idletasks()
 
