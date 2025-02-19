@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from config import centralizar_tela, abrir_abas
+from config import abrir_abas
+from root import centralizar_tela
 
 # Interface gráfica
 root = tk.Tk()

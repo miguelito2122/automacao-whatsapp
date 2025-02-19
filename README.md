@@ -83,5 +83,5 @@
    - Volte ao Aplicativo e *aproveite!*
 4. Distribua o Aplicativo:
 
-   - Compacte a pasta `<code>`AUTOMACAO-WHATSAPP `</code>` e envie para outra máquina.
+   - Compacte a pasta `<code>`AUTOMACAO-WHATSAPP `</code>` e envie para outra máquina
    - Na outra máquina, basta descompactar e clicar no main.exe.
