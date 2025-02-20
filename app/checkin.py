@@ -5,12 +5,11 @@ from config import ToolTip
 class AppCheckin(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.notebook = parent
         self.carregar_widget()
-        self.parent = parent
         self.criar_tooltips()
         self.treeview_checkin.bind('<Double-1>', self.abrir_conversa)
     def carregar_widget(self):
-        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = self.parent.parent.carregar_imagens()
         # Botão para abrir arquivo
         self.botao_abrir_arquivo = ttk.Button(
             self, 
@@ -26,33 +25,33 @@ class AppCheckin(ttk.Frame):
         # Botão de atualizar
         self.botao_atualizar_mensagens = ttk.Button(
             self, 
-            image=self.icone_refresh
+            image=self.notebook.icone_refresh
         )
-        self.botao_atualizar_mensagens.image = self.icone_refresh
+        self.botao_atualizar_mensagens.image = self.notebook.icone_refresh
         self.botao_atualizar_mensagens.place(relx=0.7, rely=0.05)
 
         # Botão de upload
         self.botao_carregar_mensagem = ttk.Button(
             self, 
-            image=self.icone_upload
+            image=self.notebook.icone_upload
         )
-        self.botao_carregar_mensagem.image = self.icone_upload
+        self.botao_carregar_mensagem.image = self.notebook.icone_upload
         self.botao_carregar_mensagem.place(relx=0.8, rely=0.05)
 
         # Botão de visualização
         self.botao_mostrar_mensagem = ttk.Button(
             self, 
-            image=self.icone_show
+            image=self.notebook.icone_show
         )
-        self.botao_mostrar_mensagem.image = self.icone_show
+        self.botao_mostrar_mensagem.image = self.notebook.icone_show
         self.botao_mostrar_mensagem.place(relx=0.9, rely=0.05)
 
         # Botão de Enviar
         self.botao_enviar_mensagem = ttk.Button(
             self, 
-            image=self.icone_send
+            image=self.notebook.icone_send
         )
-        self.botao_enviar_mensagem.image = self.icone_send
+        self.botao_enviar_mensagem.image = self.notebook.icone_send
         self.botao_enviar_mensagem.place(relx=0.6, rely=0.05)
 
         # Treeview com Scrollbar

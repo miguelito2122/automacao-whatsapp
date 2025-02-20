@@ -11,14 +11,10 @@ from config import ToolTip
 class Conexao(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.parent = parent
+        self.notebook = parent
         self.driver = None
         self.running = False
-        self.carregar_imagens()
         self.criar_widgets_conexao()
-
-    def carregar_imagens(self):
-        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = self.parent.parent.carregar_imagens()
 
     def criar_widgets_conexao(self):
         self.label_conexao = ttk.Label(
@@ -37,9 +33,9 @@ class Conexao(ttk.Frame):
 
         self.label_icone_upload = ttk.Label(
             self, 
-            image=self.icone_whatsapp
+            image=self.notebook.icone_whatsapp
         )
-        self.label_icone_upload.image = self.icone_whatsapp
+        self.label_icone_upload.image = self.notebook.icone_whatsapp
         self.label_icone_upload.place(rely=0.45, relx=0.415)
 
     def iniciar_conexao(self):
