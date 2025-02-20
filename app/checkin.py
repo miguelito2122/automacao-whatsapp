@@ -8,6 +8,7 @@ class AppCheckin(ttk.Frame):
         self.carregar_imagens()
         self.criar_widgets_checkin()
         self.criar_tooltips()
+        self.treeview_checkin.bind('<Double-1>', self.abrir_conversa)
     def carregar_imagens(self):
         self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = carregar_imagens()
     def criar_widgets_checkin(self):
@@ -91,3 +92,22 @@ class AppCheckin(ttk.Frame):
         ToolTip(self.botao_carregar_mensagem, 'Carregar Mensagem (.txt)')
         ToolTip(self.botao_abrir_arquivo, 'Planilhas (.xlsx)')
         ToolTip(self.botao_mostrar_mensagem, 'Pré-Visualizar Mensagem')
+        # Dados de exemplo
+        self.treeview_checkin.insert('', 'end', values=('07-20', 'João Silva', '5551999142035', 'Ativo', 1500.00))
+        self.treeview_checkin.insert('', 'end', values=('07-21', 'Miguel Souza', '002', 'Inativo', 2300.50))
+    def abrir_conversa(self, event):
+        # Obtém o item clicado
+        item = self.treeview_checkin.identify_row(event.y)
+        
+        if item:  # Verifica se clicou em uma linha válida
+            valores = self.treeview_checkin.item(item, 'values')
+            
+            if len(valores) >= 3:  # Verifica se existe a terceira coluna
+                valor_coluna_3 = valores[2]  # Índice 2 para a terceira coluna
+                self.processar_numero(valor_coluna_3)
+            else:
+                print("Erro: A linha não possui a terceira coluna!")
+    def processar_numero(self, num_valor):
+        # Sua lógica de processamento do Número aqui
+        print(f"Número selecionado para processamento: {num_valor}")
+        print("Executando operações específicas com o Número...")

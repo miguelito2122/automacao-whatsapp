@@ -1,6 +1,9 @@
 # Senhas
 credenciais-cripto.key
 
+# Chrome for Testing
+chrome.exe
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
