@@ -1,17 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
-from root import ToolTip, carregar_imagens
+from config import ToolTip
 
 class AppCheckin(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.carregar_imagens()
-        self.criar_widgets_checkin()
+        self.carregar_widget()
+        self.parent = parent
         self.criar_tooltips()
         self.treeview_checkin.bind('<Double-1>', self.abrir_conversa)
-    def carregar_imagens(self):
-        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = carregar_imagens()
-    def criar_widgets_checkin(self):
+    def carregar_widget(self):
+        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = self.parent.parent.carregar_imagens()
         # Botão para abrir arquivo
         self.botao_abrir_arquivo = ttk.Button(
             self, 

@@ -6,18 +6,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import threading
-from root import ToolTip, carregar_imagens
+from config import ToolTip
 
 class Conexao(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
         self.driver = None
         self.running = False
         self.carregar_imagens()
         self.criar_widgets_conexao()
 
     def carregar_imagens(self):
-        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = carregar_imagens()
+        self.icone_refresh, self.icone_show, self.icone_upload, self.icone_whatsapp, self.icone_send = self.parent.parent.carregar_imagens()
 
     def criar_widgets_conexao(self):
         self.label_conexao = ttk.Label(
