@@ -6,6 +6,7 @@ class AppCheckin(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.notebook = parent
+        self.caminho_planilha = None
         self.carregar_widget()
         self.criar_tooltips()
         self.treeview_checkin.bind('<Double-1>', self.abrir_conversa)
@@ -13,7 +14,8 @@ class AppCheckin(ttk.Frame):
         # Botão para abrir arquivo
         self.botao_abrir_arquivo = ttk.Button(
             self, 
-            text='Escolher Planilha'
+            text='Escolher Planilha',
+            command=self.notebook.abrir_arquivo
         )
         self.botao_abrir_arquivo.place(relx=0.01, rely=0.05, relheight=0.125)
 
