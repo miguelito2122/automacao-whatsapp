@@ -37,3 +37,4 @@ class Conexao(ttk.Frame):
             self.atualizar_status("Conectando...", "orange")
             self.running = True
             self.driver = Driver(self)
+            self.notebook.conexao = self  # Adiciona a conexão ao notebook

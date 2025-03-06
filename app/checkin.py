@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from config import ToolTip
+from conexao import Conexao
 
 class AppCheckin(ttk.Frame):
     def __init__(self, parent):
@@ -111,3 +112,11 @@ class AppCheckin(ttk.Frame):
         # Sua lógica de processamento do Número aqui
         print(f"Número selecionado para processamento: {num_valor}")
         print("Executando operações específicas com o Número...")
+
+        # Verifica se a conexão está ativa
+        if self.notebook.conexao.running:
+            driver = self.notebook.conexao.driver.driver
+            url = f"https://web.whatsapp.com/send?phone={num_valor}"
+            driver.get(url)
+        else:
+            print("Erro: Conexão com o WhatsApp não está ativa!")

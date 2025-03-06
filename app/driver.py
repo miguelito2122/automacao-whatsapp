@@ -47,13 +47,18 @@ class Driver():
     def monitorar_conexao(self):
         if self.running:
             try:
-                # Tenta acessar um elemento específico na página
+                # Verifica se a barra de pesquisa está presente
                 self.driver.find_element(By.XPATH, '//div[@contenteditable="true"]')
                 self.parent.after(3000, self.monitorar_conexao)  # Verifica novamente após 3 segundos
             except:
-                self.parent.atualizar_status("Desconectado!", "red")
-                self.parent.running = False
-                self.running = False
+                try:
+                    # Verifica se o QR code ainda está presente
+                    self.driver.find_element(By.XPATH, '//canvas[@aria-label="Scan me!"]')
+                    self.parent.after(3000, self.monitorar_conexao)  # Verifica novamente após 3 segundos
+                except:
+                    self.parent.atualizar_status("Desconectado!", "red")
+                    self.parent.running = False
+                    self.running = False
 
     def __del__(self):
         self.running = False
