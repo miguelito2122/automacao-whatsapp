@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import threading
 from driver import Driver
 
 class Conexao(ttk.Frame):
@@ -24,17 +23,36 @@ class Conexao(ttk.Frame):
         )
         self.botao_conectar.place(rely=0.25, relx=0.345)
 
+        self.botao_tentar_novamente = ttk.Button(
+            self, 
+            text='Tentar Novamente',
+            command=self.tentar_novamente
+        )
+        self.botao_tentar_novamente.place(rely=0.7, relx=0.32)
+
         self.label_icone_upload = ttk.Label(
             self, 
             image=self.notebook.icone_whatsapp
         )
         self.label_icone_upload.image = self.notebook.icone_whatsapp
         self.label_icone_upload.place(rely=0.45, relx=0.415)
-    def atualizar_status(self, texto, cor):
-        self.label_conexao.config(text=f"Conexão: {texto}", foreground=cor)
     def iniciar_conexao(self):
         if not self.running:
-            self.atualizar_status("Conectando...", "orange")
+            self.notebook.atualizar_status("Conectando...", "orange")
             self.running = True
             self.driver = Driver(self)
             self.notebook.conexao = self  # Adiciona a conexão ao notebook
+    def verificar_conexao_periodicamente(self):
+        if self.running and self.driver:
+            if self.driver.is_connected():
+                self.notebook.atualizar_status("Conectado!", "green")
+            else:
+                self.notebook.atualizar_status("Conexão Perdida!", "red")
+        self.after(30000, self.verificar_conexao_periodicamente)  # Verifica novamente após 30 segundos
+    def tentar_novamente(self):
+        if self.driver:
+            if self.driver.is_connected():
+                self.notebook.atualizar_status("Conectado!", "green")
+            else:
+                self.notebook.atualizar_status("Desconectado!", "red")
+                self.driver.parar_conexao()

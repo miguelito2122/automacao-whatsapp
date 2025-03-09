@@ -114,8 +114,8 @@ class AppCheckin(ttk.Frame):
         print("Executando operações específicas com o Número...")
 
         # Verifica se a conexão está ativa
-        if self.notebook.conexao.running:
-            driver = self.notebook.conexao.driver.driver
+        if self.notebook.frame_conexao.running:
+            driver = self.notebook.frame_conexao.driver.driver
             url = f"https://web.whatsapp.com/send?phone={num_valor}"
             driver.get(url)
         else:

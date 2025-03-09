@@ -20,8 +20,8 @@ class Notebook(ttk.Notebook):
         self.frame_checkout = AppCheckout(notebook)
         # Abrindo Notebook
         notebook.add(self.frame_conexao, text='Conexão')
-        notebook.add(self.frame_checkin, state='normal', text='Check-in')
-        notebook.add(self.frame_checkout, state='normal', text='Check-out')
+        notebook.add(self.frame_checkin, state='disabled', text='Check-in')
+        notebook.add(self.frame_checkout, state='disabled', text='Check-out')
     def carregar_imagens(self):
         # Carrega e redimensiona a imagem do WhatsApp (arquivo GIF)
         imagem_whats = Image.open('data/whatsapp.gif')
@@ -59,3 +59,12 @@ class Notebook(ttk.Notebook):
                 messagebox.showinfo('Sucesso', 'Planilha carregada com sucesso!')
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
+    def atualizar_status(self, texto, cor):
+        self.frame_conexao.label_conexao.config(text=f"Conexão: {texto}", foreground=cor)
+        if texto == "Conectado!":
+            for tab_id in range(1, self.index("end")):
+                self.tab(tab_id, state="normal")
+        else:
+            for tab_id in range(1, self.index("end")):
+                self.tab(tab_id, state="disabled")
+            self.select(0)
