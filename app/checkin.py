@@ -1,7 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
+import pandas as pd
+from tkinter import ttk, messagebox, filedialog
 from config import ToolTip
-from conexao import Conexao
+from tkinter import StringVar
 
 class AppCheckin(ttk.Frame):
     def __init__(self, parent):
@@ -16,14 +17,25 @@ class AppCheckin(ttk.Frame):
         self.botao_abrir_arquivo = ttk.Button(
             self, 
             text='Escolher Planilha',
-            command=self.notebook.abrir_arquivo
+            command=self.abrir_arquivo
         )
         self.botao_abrir_arquivo.place(relx=0.01, rely=0.05, relheight=0.125)
 
         self.nome = ''
-        # Entry para Nome à ser Inserido na Mensagem
-        self.entry_nome = ttk.Entry(self, textvariable=self.nome)
-        self.entry_nome.place(relx=0.315, rely=0.055, relwidth=0.27, relheight=0.115)
+        # Combobox para selecionar o mês
+        self.meses = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ]
+        self.mes_selecionado = StringVar(value='Janeiro')
+        self.combobox_meses = ttk.Combobox(
+            self, 
+            textvariable=self.mes_selecionado,
+            values=self.meses,
+            state='readonly'
+        )
+        self.combobox_meses.place(relx=0.315, rely=0.055, relwidth=0.27, relheight=0.115)
+        self.combobox_meses.bind('<<ComboboxSelected>>', self.mudar_mes)
 
         # Botão de atualizar
         self.botao_atualizar_mensagens = ttk.Button(
@@ -78,8 +90,8 @@ class AppCheckin(ttk.Frame):
             ('col1', 'Data', 20),
             ('col2', 'Nome', 20),
             ('col3', 'ID', 20),
-            ('col4', 'Status', 20),
-            ('col5', 'Valor', 20)
+            ('col4', 'Mensagem', 20),
+            ('col5', 'Status', 20)
         ]
 
         for col, cab, larg in colunas:
@@ -93,9 +105,6 @@ class AppCheckin(ttk.Frame):
         ToolTip(self.botao_carregar_mensagem, 'Carregar Mensagem (.txt)')
         ToolTip(self.botao_abrir_arquivo, 'Planilhas (.xlsx)')
         ToolTip(self.botao_mostrar_mensagem, 'Pré-Visualizar Mensagem')
-        # Dados de exemplo
-        self.treeview_checkin.insert('', 'end', values=('07-20', 'João Silva', '5551999142035', 'Ativo', 1500.00))
-        self.treeview_checkin.insert('', 'end', values=('07-21', 'Miguel Souza', '002', 'Inativo', 2300.50))
     def abrir_conversa(self, event):
         # Obtém o item clicado
         item = self.treeview_checkin.identify_row(event.y)
@@ -112,11 +121,46 @@ class AppCheckin(ttk.Frame):
         # Sua lógica de processamento do Número aqui
         print(f"Número selecionado para processamento: {num_valor}")
         print("Executando operações específicas com o Número...")
-
         # Verifica se a conexão está ativa
         if self.notebook.frame_conexao.running:
             driver = self.notebook.frame_conexao.driver.driver
             url = f"https://web.whatsapp.com/send?phone={num_valor}"
             driver.get(url)
         else:
-            print("Erro: Conexão com o WhatsApp não está ativa!")
+            messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
+    def abrir_arquivo(self):
+        caminho = filedialog.askopenfilename(
+            filetypes=[("Excel", "*.xlsx")]
+        )
+        if caminho:
+            try:
+                self.documento = pd.read_excel(caminho, sheet_name=None)
+                self.caminho_planilha = caminho
+                messagebox.showinfo('Sucesso', 'Planilha carregada com sucesso!')
+                mes = self.mes_selecionado.get()[:3]  # Get only the first three characters
+                if mes in self.documento:
+                    self.atualizar_treeview(self.documento[mes])
+            except Exception as e:
+                messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
+
+    def mudar_mes(self, event):
+        if self.caminho_planilha:
+            mes = self.mes_selecionado.get()[:3]  # Get only the first three characters
+            if mes in self.documento:
+                self.atualizar_treeview(self.documento[mes])
+            else:
+                messagebox.showerror('Erro', f'Sheet "{mes}" não encontrada na planilha!')
+        else:
+            messagebox.showwarning('Aviso', 'Por favor, selecione uma planilha primeiro!')
+
+    def atualizar_treeview(self, documento):
+        self.treeview_checkin.delete(*self.treeview_checkin.get_children())
+        for index, row in documento.iterrows():
+            if index >= 11:  # Start from row 12 (index 11)
+                data = row.iloc[1]  # Column B
+                nome = row.iloc[2]  # Column C
+                id_ = row.iloc[3]  # Column D
+                mensagem = row.iloc[5]  # Column F
+                status = row.iloc[6]  # Column G
+                self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
+
