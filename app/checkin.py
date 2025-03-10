@@ -48,7 +48,8 @@ class AppCheckin(ttk.Frame):
         # Botão de upload
         self.botao_carregar_mensagem = ttk.Button(
             self, 
-            image=self.notebook.icone_upload
+            image=self.notebook.icone_upload,
+            command=self.carregar_mensagem
         )
         self.botao_carregar_mensagem.image = self.notebook.icone_upload
         self.botao_carregar_mensagem.place(relx=0.8, rely=0.05)
@@ -56,7 +57,8 @@ class AppCheckin(ttk.Frame):
         # Botão de visualização
         self.botao_mostrar_mensagem = ttk.Button(
             self, 
-            image=self.notebook.icone_show
+            image=self.notebook.icone_show,
+            command=self.mostrar_mensagem
         )
         self.botao_mostrar_mensagem.image = self.notebook.icone_show
         self.botao_mostrar_mensagem.place(relx=0.9, rely=0.05)
@@ -163,4 +165,27 @@ class AppCheckin(ttk.Frame):
                 mensagem = row.iloc[5]  # Column F
                 status = row.iloc[6]  # Column G
                 self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
+
+    def carregar_mensagem(self):
+        caminho = filedialog.askopenfilename(
+            filetypes=[("Text files", "*.txt")]
+        )
+        if caminho:
+            try:
+                with open(caminho, 'r', encoding='utf-8') as file:
+                    self.mensagem = file.read()
+                messagebox.showinfo('Sucesso', 'Mensagem carregada com sucesso!')
+            except Exception as e:
+                messagebox.showerror('Erro', f'Erro ao carregar mensagem: {str(e)}')
+
+    def mostrar_mensagem(self):
+        if hasattr(self, 'mensagem'):
+            top = tk.Toplevel(self)
+            top.title("Mensagem")
+            text = tk.Text(top, wrap='word')
+            text.insert('1.0', self.mensagem)
+            text.config(state='disabled')
+            text.pack(expand=1, fill='both')
+        else:
+            messagebox.showwarning('Aviso', 'Nenhuma mensagem carregada!')
 
