@@ -164,7 +164,8 @@ class AppCheckin(ttk.Frame):
                 id_ = row.iloc[3]  # Column D
                 mensagem = row.iloc[5]  # Column F
                 status = row.iloc[6]  # Column G
-                self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
+                if any([data, nome, id_, mensagem, status]):  # Check if at least one cell has a value
+                    self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
 
     def carregar_mensagem(self):
         caminho = filedialog.askopenfilename(
