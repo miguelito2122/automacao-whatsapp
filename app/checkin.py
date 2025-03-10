@@ -38,12 +38,12 @@ class AppCheckin(ttk.Frame):
         self.combobox_meses.bind('<<ComboboxSelected>>', self.mudar_mes)
 
         # Botão de atualizar
-        self.botao_atualizar_mensagens = ttk.Button(
+        self.botao_agente_ia = ttk.Button(
             self, 
             image=self.notebook.icone_refresh
         )
-        self.botao_atualizar_mensagens.image = self.notebook.icone_refresh
-        self.botao_atualizar_mensagens.place(relx=0.7, rely=0.05)
+        self.botao_agente_ia.image = self.notebook.icone_refresh
+        self.botao_agente_ia.place(relx=0.7, rely=0.05)
 
         # Botão de upload
         self.botao_carregar_mensagem = ttk.Button(
@@ -107,6 +107,8 @@ class AppCheckin(ttk.Frame):
         ToolTip(self.botao_carregar_mensagem, 'Carregar Mensagem (.txt)')
         ToolTip(self.botao_abrir_arquivo, 'Planilhas (.xlsx)')
         ToolTip(self.botao_mostrar_mensagem, 'Pré-Visualizar Mensagem')
+        ToolTip(self.botao_agente_ia, 'Agente IA')
+        ToolTip(self.botao_enviar_mensagem, 'Enviar Mensagens')
     def abrir_conversa(self, event):
         # Obtém o item clicado
         item = self.treeview_checkin.identify_row(event.y)
@@ -144,7 +146,6 @@ class AppCheckin(ttk.Frame):
                     self.atualizar_treeview(self.documento[mes])
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
-
     def mudar_mes(self, event):
         if self.caminho_planilha:
             mes = self.mes_selecionado.get()[:3]  # Get only the first three characters
@@ -154,7 +155,6 @@ class AppCheckin(ttk.Frame):
                 messagebox.showerror('Erro', f'Sheet "{mes}" não encontrada na planilha!')
         else:
             messagebox.showwarning('Aviso', 'Por favor, selecione uma planilha primeiro!')
-
     def atualizar_treeview(self, documento):
         self.treeview_checkin.delete(*self.treeview_checkin.get_children())
         for index, row in documento.iterrows():
@@ -166,7 +166,6 @@ class AppCheckin(ttk.Frame):
                 status = row.iloc[6]  # Column G
                 if any([data, nome, id_, mensagem, status]):  # Check if at least one cell has a value
                     self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
-
     def carregar_mensagem(self):
         caminho = filedialog.askopenfilename(
             filetypes=[("Text files", "*.txt")]
@@ -179,7 +178,6 @@ class AppCheckin(ttk.Frame):
                 messagebox.showinfo('Sucesso', 'Mensagem carregada com sucesso!')
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar mensagem: {str(e)}')
-
     def mostrar_mensagem(self):
         if hasattr(self, 'mensagem'):
             top = tk.Toplevel(self)
