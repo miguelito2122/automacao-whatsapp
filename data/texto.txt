@@ -1,5 +1,5 @@
 Bom dia , tudo bem?
-Sou Miguel e falo da recepção do Hotel Jangal das Araucárias 😃
+Sou ${1} e falo da recepção do Hotel ${2} 😃
 
 Em breve você estará hospedado em nosso refúgio 🥰 
 Quer agilizar o seu check-in ? 🤓

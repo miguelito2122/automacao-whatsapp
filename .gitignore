@@ -4,6 +4,9 @@ credenciais-cripto.key
 # Chrome for Testing
 chrome.exe
 
+# Mensagem de texto
+texto.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

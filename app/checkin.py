@@ -175,6 +175,7 @@ class AppCheckin(ttk.Frame):
             try:
                 with open(caminho, 'r', encoding='utf-8') as file:
                     self.mensagem = file.read()
+                    self.mensagem = self.mensagem.replace('${1}', 'name_var').replace('${2}', 'local_var')
                 messagebox.showinfo('Sucesso', 'Mensagem carregada com sucesso!')
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar mensagem: {str(e)}')
