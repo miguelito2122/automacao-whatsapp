@@ -37,13 +37,13 @@ class AppCheckin(ttk.Frame):
         self.combobox_meses.place(relx=0.315, rely=0.055, relwidth=0.27, relheight=0.115)
         self.combobox_meses.bind('<<ComboboxSelected>>', self.mudar_mes)
 
-        # Botão de atualizar
+        # Botão de Agente IA
         self.botao_agente_ia = ttk.Button(
             self, 
-            image=self.notebook.icone_refresh,
-            command=self.abrir_lista   
+            image=self.notebook.icone_agente,
+            command=self.agente_ia   
         )
-        self.botao_agente_ia.image = self.notebook.icone_refresh
+        self.botao_agente_ia.image = self.notebook.icone_agente
         self.botao_agente_ia.place(relx=0.7, rely=0.05)
 
         # Botão de upload
@@ -223,20 +223,31 @@ class AppCheckin(ttk.Frame):
 
         # Labels e Entries para selecionar o período
         label_inicio = ttk.Label(top, text="Desde De:")
-        label_inicio.place(relx=0.01, rely=0.01)
+        label_inicio.place(relx=0.01, rely=0.0025)
         data_inicio = StringVar()
         entry_inicio = ttk.Entry(top, textvariable=data_inicio)
-        entry_inicio.place(relx=0.01, rely=0.05, relwidth=0.3)
+        entry_inicio.place(relx=0.01, rely=0.05, relwidth=0.275)
+        botao_calendario_inicio = ttk.Button(top, image=self.notebook.icone_calendario)
+        botao_calendario_inicio.image = self.notebook.icone_calendario
+        botao_calendario_inicio.place(relx=0.3, rely=0.0495)
 
         label_fim = ttk.Label(top, text="Até:")
-        label_fim.place(relx=0.4, rely=0.01)
+        label_fim.place(relx=0.4, rely=0.0025)
         data_fim = StringVar()
         entry_fim = ttk.Entry(top, textvariable=data_fim)
-        entry_fim.place(relx=0.4, rely=0.05, relwidth=0.3)
+        entry_fim.place(relx=0.4, rely=0.05, relwidth=0.275)
+        botao_calendario_fim = ttk.Button(top, image=self.notebook.icone_calendario)
+        botao_calendario_fim.image = self.notebook.icone_calendario
+        botao_calendario_fim.place(relx=0.69, rely=0.0495)
 
         # Botão para carregar os dados
-        botao_carregar = ttk.Button(top, text="Carregar", command=lambda: carregar_dados(None))
-        botao_carregar.place(relx=0.79, rely=0.04, relwidth=0.2) 
+        botao_carregar = ttk.Button(top, image=self.notebook.icone_refresh, command=self.enviar_mensagem)
+        botao_carregar.image = self.notebook.icone_refresh
+        botao_carregar.place(relx=0.784, rely=0.0235) 
+
+        botao_enviar = ttk.Button(top, image=self.notebook.icone_send, command=self.enviar_mensagem)
+        botao_enviar.image = self.notebook.icone_send
+        botao_enviar.place(relx=0.889, rely=0.0235)
 
         # Treeview para exibir os dados
         treeview_lista = ttk.Treeview(
@@ -275,3 +286,5 @@ class AppCheckin(ttk.Frame):
 
         # Carrega os dados inicialmente
         carregar_dados(None)
+    def agente_ia(self):
+        pass

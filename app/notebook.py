@@ -23,6 +23,16 @@ class Notebook(ttk.Notebook):
         notebook.add(self.frame_checkin, state='normal', text='Check-in')
         notebook.add(self.frame_checkout, state='normal', text='Check-out')
     def carregar_imagens(self):
+        # Carrega e redimensiona a imagem de conexão (arquivo PNG)
+        imagem_agente = Image.open('data/agent.png')
+        imagem_agente = imagem_agente.resize((24, 24), Image.Resampling.LANCZOS)
+        self.icone_agente = ImageTk.PhotoImage(imagem_agente)
+
+        # Carrega e redimensiona a imagem de upload (arquivo PNG)
+        imagem_calendario = Image.open('data/calendar.png')
+        imagem_calendario = imagem_calendario.resize((12, 12), Image.Resampling.LANCZOS)
+        self.icone_calendario = ImageTk.PhotoImage(imagem_calendario)
+
         # Carrega e redimensiona a imagem do WhatsApp (arquivo GIF)
         imagem_whats = Image.open('data/whatsapp.gif')
         imagem_whats = imagem_whats.resize((48, 48), Image.Resampling.LANCZOS)
