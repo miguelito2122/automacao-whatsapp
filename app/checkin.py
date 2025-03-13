@@ -40,7 +40,8 @@ class AppCheckin(ttk.Frame):
         # Botão de atualizar
         self.botao_agente_ia = ttk.Button(
             self, 
-            image=self.notebook.icone_refresh
+            image=self.notebook.icone_refresh,
+            command=self.abrir_lista   
         )
         self.botao_agente_ia.image = self.notebook.icone_refresh
         self.botao_agente_ia.place(relx=0.7, rely=0.05)
@@ -214,4 +215,62 @@ class AppCheckin(ttk.Frame):
                 messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
         else:
             messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")
+    def abrir_lista(self):
+        top = tk.Toplevel(self)
+        top.title("Lista de Check-ins")
+        top.geometry("350x600")
 
+        # Labels e Entries para selecionar o período
+        label_inicio = ttk.Label(top, text="Data Início (dd/mm/aa):")
+        label_inicio.place(relx=0.01, rely=0.01)
+        data_inicio = StringVar()
+        entry_inicio = ttk.Entry(top, textvariable=data_inicio)
+        entry_inicio.place(relx=0.01, rely=0.05)
+
+        label_fim = ttk.Label(top, text="Data Fim (dd/mm/aa):")
+        label_fim.place(relx=0.11, rely=0.1)
+        data_fim = StringVar()
+        entry_fim = ttk.Entry(top, textvariable=data_fim)
+        entry_fim.place(relx=0.11, rely=0.15)
+
+        # Botão para carregar os dados
+        botao_carregar = ttk.Button(top, text="Carregar Dados", command=lambda: carregar_dados(None))
+        botao_carregar.place(relx=0.21, rely=0.05) 
+
+        # Treeview para exibir os dados
+        treeview_lista = ttk.Treeview(
+            top, 
+            columns=('col1', 'col2', 'col3', 'col4'), 
+            show='headings'
+        )
+
+        colunas = [
+            ('col1', 'Nome', 150),
+            ('col2', 'Telefone', 150),
+            ('col3', 'Status', 100),
+            ('col4', 'Selecionar', 100)
+        ]
+
+        for col, cab, larg in colunas:
+            treeview_lista.column(col, width=larg)
+            treeview_lista.heading(col, text=cab)
+
+        treeview_lista.place(relx=0.01, rely=0.1, relheight=0.8, relwidth=0.98)
+
+        # Função para carregar os dados conforme o período selecionado
+        def carregar_dados(event):
+            treeview_lista.delete(*treeview_lista.get_children())
+            inicio = data_inicio.get()
+            fim = data_fim.get()
+            # Lógica para filtrar os dados conforme o período selecionado
+            # Aqui você pode adicionar a lógica para filtrar os dados conforme o período
+            for item in self.treeview_checkin.get_children():
+                valores = self.treeview_checkin.item(item, 'values')
+                nome = valores[1]
+                telefone = valores[2]
+                status = valores[4]
+                checkbox = tk.IntVar()
+                treeview_lista.insert('', 'end', values=(nome, telefone, status, checkbox))
+
+        # Carrega os dados inicialmente
+        carregar_dados(None)

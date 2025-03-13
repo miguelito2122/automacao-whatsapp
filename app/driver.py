@@ -56,13 +56,15 @@ class Driver():
                 EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@role="textbox"]'))
             )
             print("Campo de mensagem pronto!")
-
-            self.driver.execute_script("arguments[0].focus();", input_box)
             time.sleep(1)
 
-            input_box.send_keys(Keys.ENTER)
-            print("Mensagem enviada com sucesso!")
-
+            # Clica no botão de enviar
+            send_button = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//span[@data-icon="send"]'))
+            )
+            send_button.click()
+            print("Mensagem enviada!")
+            
             time.sleep(random.uniform(1, 2.8))  # Tempo aleatório para evitar bloqueios
             return True
         except Exception as e:
