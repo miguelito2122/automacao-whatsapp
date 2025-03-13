@@ -3,6 +3,9 @@ import pandas as pd
 from tkinter import ttk, messagebox, filedialog
 from config import ToolTip
 from tkinter import StringVar
+from tkcalendar import Calendar, DateEntry
+import datetime
+from planilhas import JanelaEnvio
 
 class AppCheckin(ttk.Frame):
     def __init__(self, parent):
@@ -11,31 +14,36 @@ class AppCheckin(ttk.Frame):
         self.caminho_planilha = None
         self.carregar_widget()
         self.criar_tooltips()
-        self.treeview_checkin.bind('<Double-1>', self.abrir_conversa)
+        self.treeview_checkin.bind('<Double-1>', self.conversar)
+        self.combobox_meses.bind('<<ComboboxSelected>>', self.mudar_mes)
+        # Imagens 
+        self.botao_agente_ia.image = self.notebook.icone_agente # Icone Agente
+        self.botao_carregar_mensagem.image = self.notebook.icone_upload # Icone Upload
+        self.botao_mostrar_mensagem.image = self.notebook.icone_show # Icone Show
+        self.botao_enviar_mensagem.image = self.notebook.icone_send # Icone Send
     def carregar_widget(self):
+        # Meses Usados no Combobox
+        self.meses = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ]
+
+        ## Widgets Principais
         # Botão para abrir arquivo
         self.botao_abrir_arquivo = ttk.Button(
             self, 
             text='Escolher Planilha',
             command=self.abrir_arquivo
         )
-        self.botao_abrir_arquivo.place(relx=0.01, rely=0.05, relheight=0.125)
-
-        self.nome = ''
+        
         # Combobox para selecionar o mês
-        self.meses = [
-            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ]
-        self.mes_selecionado = StringVar(value='Janeiro')
+        self.mes_selecionado = StringVar(value='Janeiro') # Valor padrão
         self.combobox_meses = ttk.Combobox(
             self, 
             textvariable=self.mes_selecionado,
             values=self.meses,
             state='readonly'
         )
-        self.combobox_meses.place(relx=0.315, rely=0.055, relwidth=0.27, relheight=0.115)
-        self.combobox_meses.bind('<<ComboboxSelected>>', self.mudar_mes)
 
         # Botão de Agente IA
         self.botao_agente_ia = ttk.Button(
@@ -43,40 +51,32 @@ class AppCheckin(ttk.Frame):
             image=self.notebook.icone_agente,
             command=self.agente_ia   
         )
-        self.botao_agente_ia.image = self.notebook.icone_agente
-        self.botao_agente_ia.place(relx=0.7, rely=0.05)
-
+        
         # Botão de upload
         self.botao_carregar_mensagem = ttk.Button(
             self, 
             image=self.notebook.icone_upload,
             command=self.carregar_mensagem
         )
-        self.botao_carregar_mensagem.image = self.notebook.icone_upload
-        self.botao_carregar_mensagem.place(relx=0.8, rely=0.05)
-
+        
         # Botão de visualização
         self.botao_mostrar_mensagem = ttk.Button(
             self, 
             image=self.notebook.icone_show,
             command=self.mostrar_mensagem
         )
-        self.botao_mostrar_mensagem.image = self.notebook.icone_show
-        self.botao_mostrar_mensagem.place(relx=0.9, rely=0.05)
-
+        
         # Botão de Enviar
         self.botao_enviar_mensagem = ttk.Button(
             self, 
             image=self.notebook.icone_send,
-            command=self.abrir_lista  # Add this line to call enviar_mensagem
+            command=self.abrir_lista
         )
-        self.botao_enviar_mensagem.image = self.notebook.icone_send
-        self.botao_enviar_mensagem.place(relx=0.6, rely=0.05)
-
+        
         # Treeview com Scrollbar
         self.treeview_checkin = ttk.Treeview(
             self, 
-            columns=('col1', 'col2', 'col3', 'col4', 'col5'), 
+            columns=('col1', 'col2', 'col3', 'col4'), 
             show='headings'
         )
 
@@ -90,28 +90,37 @@ class AppCheckin(ttk.Frame):
         # Configurar a comunicação entre Treeview e Scrollbar
         self.treeview_checkin.configure(yscrollcommand=self.scrollbar.set)
 
-        colunas = [
-            ('col1', 'Data', 20),
-            ('col2', 'Nome', 20),
-            ('col3', 'ID', 20),
-            ('col4', 'Mensagem', 20),
-            ('col5', 'Status', 20)
-        ]
-
-        for col, cab, larg in colunas:
-            self.treeview_checkin.column(col, width=larg)
-            self.treeview_checkin.heading(col, text=cab)
+        # Posicionamento dos Widgets
+        self.botao_abrir_arquivo.place(relx=0.01, rely=0.05, relheight=0.125) # Botão de Abrir Arquivo
+        self.combobox_meses.place(relx=0.315, rely=0.055, relwidth=0.27, relheight=0.115) # Combobox dos Meses
+        self.botao_agente_ia.place(relx=0.7, rely=0.05) # Botão do Agente IA
+        self.botao_carregar_mensagem.place(relx=0.8, rely=0.05) # Botão de Carregar Mensagem
+        self.botao_mostrar_mensagem.place(relx=0.9, rely=0.05) # Botão de Mostrar Mensagem
+        self.botao_enviar_mensagem.place(relx=0.6, rely=0.05) # Botão de Enviar Mensagem
 
         # Posicionamento do Treeview e Scrollbar
         self.treeview_checkin.place(relx=0.01, rely=0.2, relheight=0.775, relwidth=0.94)
         self.scrollbar.place(relx=0.95, rely=0.2, relheight=0.775, relwidth=0.04)
+
+        # Configuração das colunas
+        colunas = [
+            ('col1', 'Data', 20),
+            ('col2', 'Nome', 20),
+            ('col3', 'ID', 20),
+            ('col4', 'Status', 20)
+        ]
+
+        # Adiciona as colunas ao Treeview
+        for col, cab, larg in colunas:
+            self.treeview_checkin.column(col, width=larg)
+            self.treeview_checkin.heading(col, text=cab)
     def criar_tooltips(self):
         ToolTip(self.botao_carregar_mensagem, 'Carregar Mensagem (.txt)')
         ToolTip(self.botao_abrir_arquivo, 'Planilhas (.xlsx)')
         ToolTip(self.botao_mostrar_mensagem, 'Pré-Visualizar Mensagem')
         ToolTip(self.botao_agente_ia, 'Agente IA')
         ToolTip(self.botao_enviar_mensagem, 'Enviar Mensagens')
-    def abrir_conversa(self, event):
+    def conversar(self, event):
         # Obtém o item clicado
         item = self.treeview_checkin.identify_row(event.y)
         
@@ -119,56 +128,61 @@ class AppCheckin(ttk.Frame):
             valores = self.treeview_checkin.item(item, 'values')
             
             if len(valores) >= 3:  # Verifica se existe a terceira coluna
-                valor_coluna_3 = valores[2]  # Índice 2 para a terceira coluna
-                self.processar_numero(valor_coluna_3)
+                numero = valores[2]  # Índice 2 para a terceira coluna
+                if self.notebook.frame_conexao.running:
+                    driver = self.notebook.frame_conexao.driver.driver
+                    url = f"https://web.whatsapp.com/send?phone={numero}"
+                    driver.get(url)
+                else:
+                    messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
             else:
-                print("Erro: A linha não possui a terceira coluna!")
-    def processar_numero(self, num_valor):
-        # Sua lógica de processamento do Número aqui
-        print(f"Número selecionado para processamento: {num_valor}")
-        print("Executando operações específicas com o Número...")
-        # Verifica se a conexão está ativa
-        if self.notebook.frame_conexao.running:
-            driver = self.notebook.frame_conexao.driver.driver
-            url = f"https://web.whatsapp.com/send?phone={num_valor}"
-            driver.get(url)
-        else:
-            messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
+                messagebox.showwarning("Erro", "A linha não possui a terceira coluna!")
     def abrir_arquivo(self):
+        # Carregar planilha
         caminho = filedialog.askopenfilename(
             filetypes=[("Excel", "*.xlsx")]
         )
-        if caminho:
+        if caminho: # Verifica se o caminho não é vazio
             try:
-                self.documento = pd.read_excel(caminho, sheet_name=None)
+                self.documento = pd.read_excel(caminho, sheet_name=None) # Lê todas as abas
                 self.caminho_planilha = caminho
                 messagebox.showinfo('Sucesso', 'Planilha carregada com sucesso!')
-                mes = self.mes_selecionado.get()[:3]  # Get only the first three characters
+                mes = self.mes_selecionado.get()[:3]  # Obtém o mês selecionado (3 primeiros caracteres)
                 if mes in self.documento:
-                    self.atualizar_treeview(self.documento[mes])
+                    self.atualizar_treeview(self.documento[mes]) # Atualiza o Treeview
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
     def mudar_mes(self, event):
         if self.caminho_planilha:
-            mes = self.mes_selecionado.get()[:3]  # Get only the first three characters
-            if mes in self.documento:
-                self.atualizar_treeview(self.documento[mes])
+            mes = self.mes_selecionado.get()[:3]  # Obtém o mês selecionado (3 primeiros caracteres)
+            if mes in self.documento: 
+                self.atualizar_treeview(self.documento[mes]) # Atualiza o Treeview
             else:
                 messagebox.showerror('Erro', f'Sheet "{mes}" não encontrada na planilha!')
         else:
             messagebox.showwarning('Aviso', 'Por favor, selecione uma planilha primeiro!')
     def atualizar_treeview(self, documento):
-        self.treeview_checkin.delete(*self.treeview_checkin.get_children())
+        self.treeview_checkin.delete(*self.treeview_checkin.get_children()) # Limpa o Treeview
         for index, row in documento.iterrows():
-            if index >= 11:  # Start from row 12 (index 11)
-                data = row.iloc[1]  # Column B
-                nome = row.iloc[2]  # Column C
-                id_ = row.iloc[3]  # Column D
-                mensagem = row.iloc[5]  # Column F
-                status = row.iloc[6]  # Column G
-                if any([data, nome, id_, mensagem, status]):  # Check if at least one cell has a value
-                    self.treeview_checkin.insert('', 'end', values=(data, nome, id_, mensagem, status))
+            if index >= 11:  # Começa a partir da 12ª linha
+                data = row.iloc[1]  # Coluna B
+                nome = row.iloc[2]  # Coluna C
+                id_ = row.iloc[3]  # Coluna D
+                status = row.iloc[6]  # Coluna G
+
+                if isinstance(data, pd.Timestamp) or isinstance(data, datetime.datetime): # Verifica se é uma data
+                    data_formatada = data.strftime('%d/%m/%y')
+                else:
+                    data_formatada = str(data)
+
+                if any([data, nome, id_, status]):  # Checa se algum valor é diferente de vazio
+                    self.treeview_checkin.insert(
+                        '',
+                        'end', 
+                        values=(data_formatada, nome, id_, status)
+                    )
     def carregar_mensagem(self):
+        # Carregar mensagem
         caminho = filedialog.askopenfilename(
             filetypes=[("Text files", "*.txt")]
         )
@@ -181,7 +195,7 @@ class AppCheckin(ttk.Frame):
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar mensagem: {str(e)}')
     def mostrar_mensagem(self):
-        if hasattr(self, 'mensagem'):
+        if hasattr(self, 'mensagem'): # Verifica se a mensagem foi carregada
             top = tk.Toplevel(self)
             top.title("Mensagem")
             text = tk.Text(top, wrap='word')
@@ -191,8 +205,8 @@ class AppCheckin(ttk.Frame):
         else:
             messagebox.showwarning('Aviso', 'Nenhuma mensagem carregada!')
     def enviar_mensagem(self):
-        if hasattr(self, 'mensagem'): # Verifica se a conexão está ativa
-            if self.notebook.frame_conexao.running:
+        if hasattr(self, 'mensagem'): # Verifica se a mensagem foi carregada
+            if self.notebook.frame_conexao.running: # Verifica se a conexão está ativa
                 enviadas = 0
                 erros = 0
                 self.driver = self.notebook.frame_conexao.driver
@@ -200,12 +214,11 @@ class AppCheckin(ttk.Frame):
                     valores = self.treeview_checkin.item(item, 'values')
                     if len(valores) >= 3:
                         numero = valores[2]  # Índice 2 para a terceira coluna
-                        print(f"Enviando mensagem para {numero}...")
                         if self.driver.enviar_mensagem(numero, self.mensagem):
-                            self.treeview_checkin.item(item, values=(*valores[:4], "Enviado"))
+                            self.treeview_checkin.item(item, values=(*valores[:3], "Enviado"))
                             enviadas += 1
                         else:
-                            self.treeview_checkin.item(item, values=(*valores[:4], "Erro"))
+                            self.treeview_checkin.item(item, values=(*valores[:3], "Erro"))
                             erros += 1
                     else:
                         messagebox.showerror("Erro", "A linha não possui a terceira coluna!")
@@ -216,75 +229,10 @@ class AppCheckin(ttk.Frame):
         else:
             messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")
     def abrir_lista(self):
-        top = tk.Toplevel(self)
-        top.title("Lista de Check-ins")
-        top.geometry("350x450")
-        self.notebook.parent.centralizar_tela(top)
-
-        # Labels e Entries para selecionar o período
-        label_inicio = ttk.Label(top, text="Desde De:")
-        label_inicio.place(relx=0.01, rely=0.0025)
-        data_inicio = StringVar()
-        entry_inicio = ttk.Entry(top, textvariable=data_inicio)
-        entry_inicio.place(relx=0.01, rely=0.05, relwidth=0.275)
-        botao_calendario_inicio = ttk.Button(top, image=self.notebook.icone_calendario)
-        botao_calendario_inicio.image = self.notebook.icone_calendario
-        botao_calendario_inicio.place(relx=0.3, rely=0.0495)
-
-        label_fim = ttk.Label(top, text="Até:")
-        label_fim.place(relx=0.4, rely=0.0025)
-        data_fim = StringVar()
-        entry_fim = ttk.Entry(top, textvariable=data_fim)
-        entry_fim.place(relx=0.4, rely=0.05, relwidth=0.275)
-        botao_calendario_fim = ttk.Button(top, image=self.notebook.icone_calendario)
-        botao_calendario_fim.image = self.notebook.icone_calendario
-        botao_calendario_fim.place(relx=0.69, rely=0.0495)
-
-        # Botão para carregar os dados
-        botao_carregar = ttk.Button(top, image=self.notebook.icone_refresh, command=self.enviar_mensagem)
-        botao_carregar.image = self.notebook.icone_refresh
-        botao_carregar.place(relx=0.784, rely=0.0235) 
-
-        botao_enviar = ttk.Button(top, image=self.notebook.icone_send, command=self.enviar_mensagem)
-        botao_enviar.image = self.notebook.icone_send
-        botao_enviar.place(relx=0.889, rely=0.0235)
-
-        # Treeview para exibir os dados
-        treeview_lista = ttk.Treeview(
-            top, 
-            columns=('col1', 'col2', 'col3', 'col4'), 
-            show='headings'
-        )
-
-        colunas = [
-            ('col1', 'Nome', 50),
-            ('col2', 'Telefone', 50),
-            ('col3', 'Status', 50),
-            ('col4', 'Selecionar', 30)
-        ]
-
-        for col, cab, larg in colunas:
-            treeview_lista.column(col, width=larg)
-            treeview_lista.heading(col, text=cab)
-
-        treeview_lista.place(relx=0.01, rely=0.115, relheight=0.875, relwidth=0.98)
-
-        # Função para carregar os dados conforme o período selecionado
-        def carregar_dados(event):
-            treeview_lista.delete(*treeview_lista.get_children())
-            inicio = data_inicio.get()
-            fim = data_fim.get()
-            # Lógica para filtrar os dados conforme o período selecionado
-            # Aqui você pode adicionar a lógica para filtrar os dados conforme o período
-            for item in self.treeview_checkin.get_children():
-                valores = self.treeview_checkin.item(item, 'values')
-                nome = valores[1]
-                telefone = valores[2]
-                status = valores[4]
-                checkbox = tk.IntVar()
-                treeview_lista.insert('', 'end', values=(nome, telefone, status, checkbox))
-
-        # Carrega os dados inicialmente
-        carregar_dados(None)
+        # Abre a janela de seleção de intervalo
+        if hasattr(self, 'documento'):
+            JanelaEnvio(self)
+        else:
+            messagebox.showwarning('Aviso', 'Carregue uma planilha primeiro!')
     def agente_ia(self):
         pass
