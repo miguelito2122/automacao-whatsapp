@@ -68,7 +68,7 @@ class AppCheckin(ttk.Frame):
         self.botao_enviar_mensagem = ttk.Button(
             self, 
             image=self.notebook.icone_send,
-            command=self.enviar_mensagem  # Add this line to call enviar_mensagem
+            command=self.abrir_lista  # Add this line to call enviar_mensagem
         )
         self.botao_enviar_mensagem.image = self.notebook.icone_send
         self.botao_enviar_mensagem.place(relx=0.6, rely=0.05)
@@ -218,24 +218,25 @@ class AppCheckin(ttk.Frame):
     def abrir_lista(self):
         top = tk.Toplevel(self)
         top.title("Lista de Check-ins")
-        top.geometry("350x600")
+        top.geometry("350x450")
+        self.notebook.parent.centralizar_tela(top)
 
         # Labels e Entries para selecionar o período
-        label_inicio = ttk.Label(top, text="Data Início (dd/mm/aa):")
+        label_inicio = ttk.Label(top, text="Desde De:")
         label_inicio.place(relx=0.01, rely=0.01)
         data_inicio = StringVar()
         entry_inicio = ttk.Entry(top, textvariable=data_inicio)
-        entry_inicio.place(relx=0.01, rely=0.05)
+        entry_inicio.place(relx=0.01, rely=0.05, relwidth=0.3)
 
-        label_fim = ttk.Label(top, text="Data Fim (dd/mm/aa):")
-        label_fim.place(relx=0.11, rely=0.1)
+        label_fim = ttk.Label(top, text="Até:")
+        label_fim.place(relx=0.4, rely=0.01)
         data_fim = StringVar()
         entry_fim = ttk.Entry(top, textvariable=data_fim)
-        entry_fim.place(relx=0.11, rely=0.15)
+        entry_fim.place(relx=0.4, rely=0.05, relwidth=0.3)
 
         # Botão para carregar os dados
-        botao_carregar = ttk.Button(top, text="Carregar Dados", command=lambda: carregar_dados(None))
-        botao_carregar.place(relx=0.21, rely=0.05) 
+        botao_carregar = ttk.Button(top, text="Carregar", command=lambda: carregar_dados(None))
+        botao_carregar.place(relx=0.79, rely=0.04, relwidth=0.2) 
 
         # Treeview para exibir os dados
         treeview_lista = ttk.Treeview(
@@ -245,17 +246,17 @@ class AppCheckin(ttk.Frame):
         )
 
         colunas = [
-            ('col1', 'Nome', 150),
-            ('col2', 'Telefone', 150),
-            ('col3', 'Status', 100),
-            ('col4', 'Selecionar', 100)
+            ('col1', 'Nome', 50),
+            ('col2', 'Telefone', 50),
+            ('col3', 'Status', 50),
+            ('col4', 'Selecionar', 30)
         ]
 
         for col, cab, larg in colunas:
             treeview_lista.column(col, width=larg)
             treeview_lista.heading(col, text=cab)
 
-        treeview_lista.place(relx=0.01, rely=0.1, relheight=0.8, relwidth=0.98)
+        treeview_lista.place(relx=0.01, rely=0.115, relheight=0.875, relwidth=0.98)
 
         # Função para carregar os dados conforme o período selecionado
         def carregar_dados(event):
