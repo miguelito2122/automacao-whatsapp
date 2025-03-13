@@ -20,8 +20,8 @@ class Notebook(ttk.Notebook):
         self.frame_checkout = AppCheckout(notebook)
         # Abrindo Notebook
         notebook.add(self.frame_conexao, text='Conexão')
-        notebook.add(self.frame_checkin, state='normal', text='Check-in')
-        notebook.add(self.frame_checkout, state='normal', text='Check-out')
+        notebook.add(self.frame_checkin, state='disabled', text='Check-in')
+        notebook.add(self.frame_checkout, state='disabled', text='Check-out')
     def carregar_imagens(self):
         # Carrega e redimensiona a imagem do WhatsApp (arquivo GIF)
         imagem_whats = Image.open('data/whatsapp.gif')

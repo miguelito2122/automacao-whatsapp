@@ -2,10 +2,14 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from tkinter import messagebox
 import threading
 import time
+import urllib.parse
+import random
 
 class Driver():
     def __init__(self, parent):
@@ -19,6 +23,8 @@ class Driver():
         try:
             self.chrome_options = ChromeOptions()
             self.chrome_options.add_argument('--start-maximized')
+            self.chrome_options.add_argument("--disable-gpu")  # Pode ser necessário em alguns ambientes Linux
+            self.chrome_options.add_argument("--no-sandbox")  # Pode ser necessário em contêineres Docker ou ambientes restritos
             self.driver = webdriver.Chrome(options=self.chrome_options)
             self.driver.get("https://web.whatsapp.com/")
             self.parent.notebook.atualizar_status(f"Aguardando QR Code","orange")
@@ -38,6 +44,30 @@ class Driver():
             self.parent.notebook.atualizar_status("Desconectado!", "red")
             messagebox.showerror('Erro', f'Tempo Expirado: {str(e)}')
             self.parar_conexao()
+    def enviar_mensagem(self, numero, mensagem):
+        try:
+            print(f"Iniciando o envio de mensagem para {numero}")
+            mensagem_url = urllib.parse.quote(mensagem)
+            self.driver.get(f"https://web.whatsapp.com/send?phone={numero}&text={mensagem_url}&app_absent=0")
+            print("Navegou para a URL de envio de mensagem")
+
+            # Espera o campo de mensagem estar pronto
+            input_box = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//div[@contenteditable="true"][@role="textbox"]'))
+            )
+            print("Campo de mensagem pronto!")
+
+            self.driver.execute_script("arguments[0].focus();", input_box)
+            time.sleep(1)
+
+            input_box.send_keys(Keys.ENTER)
+            print("Mensagem enviada com sucesso!")
+
+            time.sleep(random.uniform(1, 2.8))  # Tempo aleatório para evitar bloqueios
+            return True
+        except Exception as e:
+            print(f"Erro ao enviar mensagem: {str(e)}")
+            return False
     def iniciar_monitoramento(self):
         # Iniciar monitoramento em thread separada
         self.running = True

@@ -66,7 +66,8 @@ class AppCheckin(ttk.Frame):
         # Botão de Enviar
         self.botao_enviar_mensagem = ttk.Button(
             self, 
-            image=self.notebook.icone_send
+            image=self.notebook.icone_send,
+            command=self.enviar_mensagem  # Add this line to call enviar_mensagem
         )
         self.botao_enviar_mensagem.image = self.notebook.icone_send
         self.botao_enviar_mensagem.place(relx=0.6, rely=0.05)
@@ -188,4 +189,29 @@ class AppCheckin(ttk.Frame):
             text.pack(expand=1, fill='both')
         else:
             messagebox.showwarning('Aviso', 'Nenhuma mensagem carregada!')
+    def enviar_mensagem(self):
+        if hasattr(self, 'mensagem'): # Verifica se a conexão está ativa
+            if self.notebook.frame_conexao.running:
+                enviadas = 0
+                erros = 0
+                self.driver = self.notebook.frame_conexao.driver
+                for item in self.treeview_checkin.get_children(): # Itera sobre todos os itens no Treeview
+                    valores = self.treeview_checkin.item(item, 'values')
+                    if len(valores) >= 3:
+                        numero = valores[2]  # Índice 2 para a terceira coluna
+                        print(f"Enviando mensagem para {numero}...")
+                        if self.driver.enviar_mensagem(numero, self.mensagem):
+                            self.treeview_checkin.item(item, values=(*valores[:4], "Enviado"))
+                            enviadas += 1
+                        else:
+                            self.treeview_checkin.item(item, values=(*valores[:4], "Erro"))
+                            erros += 1
+                    else:
+                        messagebox.showerror("Erro", "A linha não possui a terceira coluna!")
+                messagebox.showinfo("Sucesso", "Mensagens enviadas com sucesso!")
+                messagebox.showinfo("Resumo", f"Enviadas: {enviadas}, Erros: {erros}")
+            else:
+                messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
+        else:
+            messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")
 
