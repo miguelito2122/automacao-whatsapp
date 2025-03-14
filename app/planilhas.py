@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkcalendar import DateEntry
 import datetime
-from tkinter import StringVar
+from tkinter import StringVar, messagebox
 
 class JanelaEnvio(tk.Toplevel):
     def __init__(self, main_app):
@@ -26,13 +26,24 @@ class JanelaEnvio(tk.Toplevel):
         self.cal_fim = DateEntry(self.frame_calendarios, textvariable=self.data_fim, date_pattern='dd/mm/yy')
         self.cal_fim.pack(side="left", padx=5)
 
+        self.frame_botoes = ttk.Frame(self)
+        self.frame_botoes.pack(pady=10)
+
         # Botão para carregar dados
         self.botao_carregar = ttk.Button(
-            self, 
+            self.frame_botoes, 
             image=self.main_app.notebook.icone_refresh,
             command=self.carregar_dados
         )
-        self.botao_carregar.pack(pady=5)
+
+        self.botao_enviar = ttk.Button(
+            self.frame_botoes, 
+            image=self.main_app.notebook.icone_send,
+            command=self.enviar_mensagem
+        )
+
+        self.botao_enviar.pack(side='left', padx=5)
+        self.botao_carregar.pack(side='left', padx=5)
 
         # Treeview secundário (lista de check-ins filtrados)
         self.treeview_secundario = ttk.Treeview(
@@ -53,7 +64,7 @@ class JanelaEnvio(tk.Toplevel):
             self.treeview_secundario.column(col, width=larg)
             self.treeview_secundario.heading(col, text=cab)
         
-        self.treeview_secundario.place(relx=0.01, rely=0.2, relheight=0.7, relwidth=0.98)
+        self.treeview_secundario.place(relx=0.01, rely=0.25, relheight=0.7, relwidth=0.98)
 
     def carregar_dados(self):
         # Limpa o treeview secundário
@@ -76,3 +87,27 @@ class JanelaEnvio(tk.Toplevel):
                 (data <= datetime.datetime.strptime(self.data_fim.get(), "%d/%m/%y"))
             ):
                 self.treeview_secundario.insert('', 'end', values=valores)
+    def enviar_mensagem(self):
+        if hasattr(self.main_app, 'mensagem'): # Verifica se a mensagem foi carregada
+            if self.main_app.notebook.frame_conexao.running: # Verifica se a conexão está ativa
+                enviadas = 0
+                erros = 0
+                self.driver = self.main_app.notebook.frame_conexao.driver
+                for item in self.treeview_secundario.get_children(): # Itera sobre todos os itens no Treeview
+                    valores = self.treeview_secundario.item(item, 'values')
+                    if len(valores) >= 3:
+                        numero = valores[2]  # Índice 2 para a terceira coluna
+                        if self.driver.enviar_mensagem(numero, self.main_app.mensagem):
+                            self.treeview_secundario.item(item, values=(*valores[:3], "Enviado"))
+                            enviadas += 1
+                        else:
+                            self.treeview_secundario.item(item, values=(*valores[:3], "Erro"))
+                            erros += 1
+                    else:
+                        messagebox.showerror("Erro", "A linha não possui a terceira coluna!")
+                messagebox.showinfo("Sucesso", "Mensagens enviadas com sucesso!")
+                messagebox.showinfo("Resumo", f"Enviadas: {enviadas}, Erros: {erros}")
+            else:
+                messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
+        else:
+            messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")

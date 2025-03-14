@@ -168,7 +168,7 @@ class AppCheckin(ttk.Frame):
                 data = row.iloc[1]  # Coluna B
                 nome = row.iloc[2]  # Coluna C
                 id_ = row.iloc[3]  # Coluna D
-                status = row.iloc[6]  # Coluna G
+                status = row.iloc[9]  # Coluna J
 
                 if isinstance(data, pd.Timestamp) or isinstance(data, datetime.datetime): # Verifica se é uma data
                     data_formatada = data.strftime('%d/%m/%y')
@@ -204,30 +204,6 @@ class AppCheckin(ttk.Frame):
             text.pack(expand=1, fill='both')
         else:
             messagebox.showwarning('Aviso', 'Nenhuma mensagem carregada!')
-    def enviar_mensagem(self):
-        if hasattr(self, 'mensagem'): # Verifica se a mensagem foi carregada
-            if self.notebook.frame_conexao.running: # Verifica se a conexão está ativa
-                enviadas = 0
-                erros = 0
-                self.driver = self.notebook.frame_conexao.driver
-                for item in self.treeview_checkin.get_children(): # Itera sobre todos os itens no Treeview
-                    valores = self.treeview_checkin.item(item, 'values')
-                    if len(valores) >= 3:
-                        numero = valores[2]  # Índice 2 para a terceira coluna
-                        if self.driver.enviar_mensagem(numero, self.mensagem):
-                            self.treeview_checkin.item(item, values=(*valores[:3], "Enviado"))
-                            enviadas += 1
-                        else:
-                            self.treeview_checkin.item(item, values=(*valores[:3], "Erro"))
-                            erros += 1
-                    else:
-                        messagebox.showerror("Erro", "A linha não possui a terceira coluna!")
-                messagebox.showinfo("Sucesso", "Mensagens enviadas com sucesso!")
-                messagebox.showinfo("Resumo", f"Enviadas: {enviadas}, Erros: {erros}")
-            else:
-                messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
-        else:
-            messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")
     def abrir_lista(self):
         # Abre a janela de seleção de intervalo
         if hasattr(self, 'documento'):
