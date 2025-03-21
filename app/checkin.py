@@ -3,7 +3,6 @@ import pandas as pd
 from tkinter import ttk, messagebox, filedialog
 from config import ToolTip
 from tkinter import StringVar
-from tkcalendar import Calendar, DateEntry
 import datetime
 from planilhas import JanelaEnvio
 
@@ -147,9 +146,9 @@ class AppCheckin(ttk.Frame):
                 self.documento = pd.read_excel(caminho, sheet_name=None) # Lê todas as abas
                 self.caminho_planilha = caminho
                 messagebox.showinfo('Sucesso', 'Planilha carregada com sucesso!')
-                mes = self.mes_selecionado.get()[:3]  # Obtém o mês selecionado (3 primeiros caracteres)
-                if mes in self.documento:
-                    self.atualizar_treeview(self.documento[mes]) # Atualiza o Treeview
+                self.mes = self.mes_selecionado.get()[:3]  # Obtém o mês selecionado (3 primeiros caracteres)
+                if self.mes in self.documento:
+                    self.atualizar_treeview(self.documento[self.mes]) # Atualiza o Treeview
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
     def mudar_mes(self, event):
@@ -190,7 +189,6 @@ class AppCheckin(ttk.Frame):
             try:
                 with open(caminho, 'r', encoding='utf-8') as file:
                     self.mensagem = file.read()
-                    self.mensagem = self.mensagem.replace('${1}', 'name_var').replace('${2}', 'local_var')
                 messagebox.showinfo('Sucesso', 'Mensagem carregada com sucesso!')
             except Exception as e:
                 messagebox.showerror('Erro', f'Erro ao carregar mensagem: {str(e)}')
@@ -199,6 +197,7 @@ class AppCheckin(ttk.Frame):
             top = tk.Toplevel(self)
             top.title("Mensagem")
             text = tk.Text(top, wrap='word')
+            self.mensagem = self.editar_mensagem('{Nome}', '{Local}', '{Cliente}')
             text.insert('1.0', self.mensagem)
             text.config(state='disabled')
             text.pack(expand=1, fill='both')
@@ -210,5 +209,11 @@ class AppCheckin(ttk.Frame):
             JanelaEnvio(self)
         else:
             messagebox.showwarning('Aviso', 'Carregue uma planilha primeiro!')
+    def editar_mensagem(self, nome, local, cliente):
+        mensagem = self.mensagem
+        mensagem = mensagem.replace('${1}', nome)
+        mensagem = mensagem.replace('${2}', local)
+        mensagem = mensagem.replace('${3}', cliente)
+        return mensagem
     def agente_ia(self):
         pass

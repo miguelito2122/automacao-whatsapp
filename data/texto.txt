@@ -1,4 +1,4 @@
-Bom dia , tudo bem?
+Bom dia ${3}, tudo bem?
 Sou ${1} e falo da recepção do Hotel ${2} 😃
 
 Em breve você estará hospedado em nosso refúgio 🥰 

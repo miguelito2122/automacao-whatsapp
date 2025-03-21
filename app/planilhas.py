@@ -88,25 +88,81 @@ class JanelaEnvio(tk.Toplevel):
             ):
                 self.treeview_secundario.insert('', 'end', values=valores)
     def enviar_mensagem(self):
+        top = tk.Toplevel(self)
+        top.title("Informações")
+        top.geometry("300x100")
+        self.main_app.notebook.parent.centralizar_tela(top)
+
+        # Variáveis para armazenar os valores
+
+        nome_var = tk.StringVar()
+        local_var = tk.StringVar()
+
+        # Widgets
+        label_nome = tk.Label(top, text="Seu Nome:")
+        label_nome.place(relx=0.01, rely=0.01)
+        entry_nome = tk.Entry(top, textvariable=nome_var)
+        entry_nome.place(relx=0.35, rely=0.01)
+
+        label_local = tk.Label(top, text="Local de Envio:")
+        label_local.place(relx=0.01, rely=0.35)
+        entry_local = tk.Entry(top, textvariable=local_var)
+        entry_local.place(relx=0.35, rely=0.35)
+
+        def mandar():
+            nome = nome_var.get()
+            local = local_var.get()
+            self.processar_envio(nome, local)
+            top.destroy()
+
+        botao_enviar = tk.Button(top, text="Enviar", command=mandar)
+        botao_enviar.place(relx=0.5, rely=0.7, anchor='center')
+
+        top.transient(self)
+        top.grab_set()
+        self.wait_window(top)
+
+    def processar_envio(self, nome, local):
         if hasattr(self.main_app, 'mensagem'): # Verifica se a mensagem foi carregada
             if self.main_app.notebook.frame_conexao.running: # Verifica se a conexão está ativa
                 enviadas = 0
                 erros = 0
                 self.driver = self.main_app.notebook.frame_conexao.driver
+
+                numeros_processados = set() # Armazena os números processados para evitar duplicatas
+                numeros_enviados = set() # Armazena os números que foram enviados
+                numeros_erros = set() # Armazena os números que deram erro
                 for item in self.treeview_secundario.get_children(): # Itera sobre todos os itens no Treeview
                     valores = self.treeview_secundario.item(item, 'values')
                     if len(valores) >= 3:
                         numero = valores[2]  # Índice 2 para a terceira coluna
-                        if self.driver.enviar_mensagem(numero, self.main_app.mensagem):
-                            self.treeview_secundario.item(item, values=(*valores[:3], "Enviado"))
+
+                        if numero in numeros_processados:
                             enviadas += 1
+                            continue
+
+                        cliente = valores[1]
+                        mensagem = self.main_app.editar_mensagem(nome, local, cliente)
+
+                        if self.driver.enviar_mensagem(numero, mensagem):
+                            self.treeview_secundario.item(item, values=(*valores[:3], "Enviado"))
+                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 'Enviado')
+                            enviadas += 1
+                            numeros_enviados.add(numero)
                         else:
                             self.treeview_secundario.item(item, values=(*valores[:3], "Erro"))
+                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 'Erro')
                             erros += 1
+                            numeros_erros.add(numero)
+
+                        numeros_processados.add(numero)
                     else:
                         messagebox.showerror("Erro", "A linha não possui a terceira coluna!")
                 messagebox.showinfo("Sucesso", "Mensagens enviadas com sucesso!")
-                messagebox.showinfo("Resumo", f"Enviadas: {enviadas}, Erros: {erros}")
+                resumo = (f'Processados: {len(numeros_processados)}\n'
+                          f'Enviados: {enviadas} ({", ".join(numeros_enviados)})\n'
+                          f'Erros: {erros} ({", ".join(numeros_erros)})')
+                messagebox.showinfo("Resumo", resumo)
             else:
                 messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
         else:

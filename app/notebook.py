@@ -1,6 +1,5 @@
-import tkinter as tk
 from tkinter import ttk
-import pandas as pd
+from openpyxl import load_workbook
 from checkin import AppCheckin
 from conexao import Conexao
 from checkout import AppCheckout
@@ -66,3 +65,25 @@ class Notebook(ttk.Notebook):
             for tab_id in range(1, self.index("end")):
                 self.tab(tab_id, state="disabled")
             self.select(0)
+    def atualizar_planilha(self, caminho, mes, telefone, status):
+        try:
+            wb = load_workbook(caminho)
+
+            if mes not in wb.sheetnames:
+                print(f"Sheet {mes} não encontrada na planilha.")
+                return False
+
+            ws = wb[mes]
+
+            for row in ws.iter_rows(min_row=12, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
+                valor_telefone = str(row[2].value)
+                if telefone in valor_telefone:
+                    row[8].value = status
+                    print(f"Status atualizado para {telefone} na planilha.")
+
+            wb.save(caminho)                
+            return True
+        except Exception as e:
+            print(f"Erro ao atualizar status na planilha: {str(e)}")
+            return False
+        
