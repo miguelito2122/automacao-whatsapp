@@ -65,7 +65,7 @@ class Notebook(ttk.Notebook):
             for tab_id in range(1, self.index("end")):
                 self.tab(tab_id, state="disabled")
             self.select(0)
-    def atualizar_planilha(self, caminho, mes, telefone, status):
+    def atualizar_planilha(self, caminho, mes, telefone, coluna, status):
         try:
             wb = load_workbook(caminho)
 
@@ -78,7 +78,7 @@ class Notebook(ttk.Notebook):
             for row in ws.iter_rows(min_row=12, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
                 valor_telefone = str(row[2].value)
                 if telefone in valor_telefone:
-                    row[8].value = status
+                    row[coluna].value = status
                     print(f"Status atualizado para {telefone} na planilha.")
 
             wb.save(caminho)                

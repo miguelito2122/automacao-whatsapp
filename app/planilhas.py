@@ -146,12 +146,12 @@ class JanelaEnvio(tk.Toplevel):
 
                         if self.driver.enviar_mensagem(numero, mensagem):
                             self.treeview_secundario.item(item, values=(*valores[:3], "Enviado"))
-                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 'Enviado')
+                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 5, 'Sim')
                             enviadas += 1
                             numeros_enviados.add(numero)
                         else:
                             self.treeview_secundario.item(item, values=(*valores[:3], "Erro"))
-                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 'Erro')
+                            self.main_app.notebook.atualizar_planilha(self.main_app.caminho_planilha, self.main_app.mes, numero, 5, 'Não')
                             erros += 1
                             numeros_erros.add(numero)
 
