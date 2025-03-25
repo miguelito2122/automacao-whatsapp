@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from notebook import Notebook
 from update import update_application
+import subprocess
+import sys
 
 class Root(tk.Tk):
     def __init__(self):
@@ -11,8 +13,10 @@ class Root(tk.Tk):
         self.resizable(False, False)
         self.centralizar_tela(self)
         # Notebook
-        self.atualizar = update_application()
+        self.atualizar_aplicativo()
         self.notebook = Notebook(self)
+    def atualizar_aplicativo():
+        subprocess.run([sys.executable, 'update.py'])
     def centralizar_tela(self, tela):
         tela.update_idletasks()
 
