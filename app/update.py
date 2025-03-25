@@ -39,11 +39,13 @@ def download_latest_release(repo_url, download_path, console):
     
     console.insert(tk.END, "Download concluído.\n")
     return zip_path
+
 def extract_zip(zip_path, extract_to, console):
     console.insert(tk.END, "Extraindo arquivos...\n")
     
     # Verifica se o arquivo é um ZIP válido
     if not zipfile.is_zipfile(zip_path):
+        console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
         raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
     
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -51,11 +53,27 @@ def extract_zip(zip_path, extract_to, console):
     
     console.insert(tk.END, "Extração concluída.\n")
 
+def clean_directory(directory, console, exclude_files=[]):
+    console.insert(tk.END, "Limpando o diretório antes da atualização...\n")
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        if item in exclude_files:
+            console.insert(tk.END, f"Preservando: {item_path}\n")
+            continue
+        if os.path.isfile(item_path):
+            os.remove(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+            console.insert(tk.END, f"Removido diretório: {item_path}\n")
+    console.insert(tk.END, "Limpeza concluída.\n")
+
 def check_version(repo_url, app_path, console):
     console.insert(tk.END, "Verificando versão...\n")
+    
+    # URL do arquivo de versão no repositório remoto
     version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
     try:
-        # Faz o download do arquivo de versão
+        # Faz o download do arquivo de versão remoto
         response = requests.get(version_url, timeout=10)
         if response.status_code != 200:
             raise ValueError(f"Erro ao obter a versão remota: {response.status_code}")
@@ -83,17 +101,6 @@ def check_version(repo_url, app_path, console):
         console.insert(tk.END, "Versões iguais. Nenhuma atualização necessária.\n")
         return False  # Nenhuma atualização necessária
     
-def clean_directory(directory, console):
-    console.insert(tk.END, "Limpando o diretório antes da atualização...\n")
-    for item in os.listdir(directory):
-        item_path = os.path.join(directory, item)
-        if os.path.isfile(item_path):
-            os.remove(item_path)
-        elif os.path.isdir(item_path):
-            shutil.rmtree(item_path)
-            console.insert(tk.END, f"Removido diretório: {item_path}\n")
-    console.insert(tk.END, "Limpeza concluída.\n")
-
 def update_application(repo_url, app_path, console):
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
@@ -101,12 +108,18 @@ def update_application(repo_url, app_path, console):
         if not check_version(repo_url, app_path, console):
             console.insert(tk.END, "Nenhuma atualização necessária.\n")
             return
-        
 
         download_path = os.path.join(app_path, 'update')
         os.makedirs(download_path, exist_ok=True)
         zip_path = download_latest_release(repo_url, download_path, console)
-        clean_directory(app_path, console)
+
+        # Verifica se o arquivo baixado é válido antes de limpar o diretório
+        if not zipfile.is_zipfile(zip_path):
+            console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
+            raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
+
+        # Limpa o diretório, preservando arquivos essenciais
+        clean_directory(app_path, console, exclude_files=['update.py', 'version.txt'])
         extract_zip(zip_path, app_path, console)
         shutil.rmtree(download_path)
 
@@ -120,12 +133,19 @@ def update_application(repo_url, app_path, console):
     except Exception as e:
         console.insert(tk.END, f"Erro durante a atualização: {e}\n")
 
+def mock_download_latest_release(repo_url, download_path, console):
+    console.insert(tk.END, "Mockando o download do último release...\n")
+    zip_path = os.path.join(download_path, 'latest_release.zip')
+    with zipfile.ZipFile(zip_path, 'w') as zip_ref:
+        zip_ref.writestr('dummy_file.txt', 'conteúdo de teste')
+    console.insert(tk.END, f"Mock concluído. Arquivo ZIP criado em: {zip_path}\n")
+    return zip_path
 
 def show_update_window():
     # Configuração da janela principal
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
-    update_window.geometry("200x150")
+    update_window.geometry("500x400")
     update_window.resizable(False, False)
 
     # Status
