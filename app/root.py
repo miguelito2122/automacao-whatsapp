@@ -1,8 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
 from notebook import Notebook
-from update import update_application
 import subprocess
+import os
 import sys
 
 class Root(tk.Tk):
@@ -15,8 +14,13 @@ class Root(tk.Tk):
         # Notebook
         self.atualizar_aplicativo()
         self.notebook = Notebook(self)
-    def atualizar_aplicativo():
-        subprocess.run([sys.executable, 'update.py'])
+    def atualizar_aplicativo(self):
+        # Obtém o caminho absoluto do arquivo update.py
+        update_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'update.py')
+        if os.path.exists(update_script):
+            subprocess.run([sys.executable, update_script])
+        else:
+            print(f"Erro: O arquivo {update_script} não foi encontrado.")
     def centralizar_tela(self, tela):
         tela.update_idletasks()
 
