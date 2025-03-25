@@ -23,6 +23,10 @@ def download_latest_release(repo_url, download_path, console):
         console.insert(tk.END, f"Erro ao baixar o arquivo: {response.status_code}\n")
         raise ValueError(f"Erro ao baixar o arquivo: {response.status_code}")
     
+    if not response.content:    
+        console.insert(tk.END, "Erro: O conteúdo do arquivo está vazio.\n")
+        raise ValueError(f"O conteúdo do arquivo está vazio.")
+
     zip_path = os.path.join(download_path, 'latest_release.zip')
     with open(zip_path, 'wb') as file:
         file.write(response.content)
@@ -89,36 +93,34 @@ def clean_directory(directory, console, exclude_files=[]):
 # Funções de Verificação de Versão
 # ==========================
 
-def check_version(repo_url, app_path, console):
+def check_version(repo_url, app_path, console, branch="main"):
     """Verifica se a versão local é diferente da versão remota."""
-    console.insert(tk.END, "Verificando versão...\n")
-    version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
+    console.insert(tk.END, f"Verificando versão na branch '{branch}'...\n")
+    
+    # Construindo o caminho para o arquivo de versão remota
+    archive_path = f"archive/refs/heads/{branch}.zip"
+    if archive_path in repo_url:
+        # Remover o caminho do arquivo ZIP e adicionar o caminho para o arquivo de versão
+        version_url = repo_url.replace(archive_path, f"raw/{branch}/version.txt")
+    else:
+        console.insert(tk.END, f"Erro: O repo_url não contém o caminho esperado para a branch '{branch}'.\n")
+        raise ValueError(f"The repo_url does not contain the expected archive path for branch '{branch}'.")
+    
     try:
+        # Verificar a versão local
         response = requests.get(version_url, timeout=10)
         if response.status_code != 200:
             raise ValueError(f"Erro ao obter a versão remota: {response.status_code}")
         remote_version = response.text.strip()
-        console.insert(tk.END, f"Versão remota: {remote_version}\n")
-    except requests.exceptions.RequestException as e:
+        console.insert(tk.END, f"Versão remota na branch '{branch}': {remote_version}\n") # Exemplo: '1.0.0'
+        local_version_path = os.path.join(app_path, 'version.txt') # Caminho do arquivo de versão local
+        if not os.path.exists(local_version_path):
+            console.insert(tk.END, "Aviso: O arquivo de versão local não foi encontrado. Continuando a instalação...\n")
+            return True
+    except Exception as e:
         console.insert(tk.END, f"Erro ao verificar a versão remota: {e}\n")
         raise ValueError(f"Erro ao verificar a versão remota: {e}")
-
-    local_version_file = os.path.join(os.path.dirname(app_path), 'version.txt')
-    if os.path.exists(local_version_file):
-        with open(local_version_file, 'r') as file:
-            local_version = file.read().strip()
-        console.insert(tk.END, f"Versão local: {local_version}\n")
-    else:
-        console.insert(tk.END, "Versão local não encontrada. Atualização necessária.\n")
-        return True
-
-    if remote_version != local_version:
-        console.insert(tk.END, "Versões diferentes. Atualização necessária.\n")
-        return True
-    else:
-        console.insert(tk.END, "Versões iguais. Nenhuma atualização necessária.\n")
-        return False
-
+    
 # ==========================
 # Função Principal de Atualização
 # ==========================
@@ -127,24 +129,46 @@ def update_application(repo_url, app_path, console):
     """Gerencia o processo de atualização do aplicativo."""
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
-        if not check_version(repo_url, app_path, console):
-            console.insert(tk.END, "Nenhuma atualização necessária.\n")
+        if not check_version(repo_url, app_path, console, branch='main'):
+            console.insert(tk.END, "Nenhuma atualização necessária. O aplicativo já está na versão mais recente.\n")
             return
 
+        console.insert(tk.END, "Iniciando o download do último release...\n")
         # Diretório de download movido para a raiz do projeto
-        root_path = os.path.dirname(app_path)  # Caminho da raiz do projeto
-        download_path = os.path.join(root_path, 'update')
+        download_path = os.path.join(app_path, 'update')
         os.makedirs(download_path, exist_ok=True)
 
-        zip_path = download_latest_release(repo_url, download_path, console)
+        USE_MOCK = False  # Altere para False para usar o download real
+
+        if USE_MOCK:
+            zip_path = mock_download_latest_release(repo_url, download_path, console)
+        else:
+            zip_path = download_latest_release(repo_url, download_path, console)
+
+        if not os.path.isfile(zip_path):
+            console.insert(tk.END, "Erro: O caminho especificado não é um arquivo.\n")
+            raise ValueError("O caminho especificado não é um arquivo.")
 
         if not zipfile.is_zipfile(zip_path):
             console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
             raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
-
+        
         # Excluir apenas arquivos não essenciais
-        clean_directory(app_path, console, exclude_files=['update.py', 'version.txt', 'docs', '.github'])
-
+        clean_directory(app_path, console, exclude_files=[
+            'update.py', 
+            'version.txt', 
+            'docs', 
+            '.github', 
+            'tests', 
+            'main.spec', 
+            'LICENSE', 
+            'README.md', 
+            '.gitignore',
+            '.vscode',
+            '.venv',
+            '__pycache__',
+            '.pytest_cache'
+        ])
         extract_zip(zip_path, app_path, console)
         shutil.rmtree(download_path)
 
@@ -166,7 +190,7 @@ def show_update_window():
     """Exibe a interface gráfica para o processo de atualização."""
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
-    update_window.geometry("500x400")
+    update_window.geometry("300x400")
     update_window.resizable(False, False)
 
     status_label = tk.Label(update_window, text="Status: Atualizando...", font=("Arial", 14, "bold"))
@@ -184,7 +208,7 @@ def show_update_window():
 
     def start_update():
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-        app_path = os.path.dirname(os.path.abspath(__file__))
+        app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         update_application(repo_url, app_path, console)
         status_label.config(text="Status: Atualização Concluída!")
         close_button.config(state=tk.NORMAL)
