@@ -73,12 +73,17 @@ def clean_directory(directory, console, exclude_files=[]):
         if item in exclude_files:
             console.insert(tk.END, f"Preservando: {item_path}\n")
             continue
-        if os.path.isfile(item_path):
-            os.remove(item_path)
-        elif os.path.isdir(item_path):
-            shutil.rmtree(item_path)
-            console.insert(tk.END, f"Removido diretório: {item_path}\n")
+        try:
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+                console.insert(tk.END, f"Removido arquivo: {item_path}\n")
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+                console.insert(tk.END, f"Removido diretório: {item_path}\n")
+        except Exception as e:
+            console.insert(tk.END, f"Erro ao remover {item_path}: {e}\n")
     console.insert(tk.END, "Limpeza concluída.\n")
+
 
 # ==========================
 # Funções de Verificação de Versão
@@ -131,16 +136,19 @@ def update_application(repo_url, app_path, console):
         download_path = os.path.join(root_path, 'update')
         os.makedirs(download_path, exist_ok=True)
 
-        zip_path = mock_download_latest_release(repo_url, download_path, console)
+        zip_path = download_latest_release(repo_url, download_path, console)
 
         if not zipfile.is_zipfile(zip_path):
             console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
             raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
 
-        clean_directory(app_path, console, exclude_files=['update.py', 'version.txt'])
+        # Excluir apenas arquivos não essenciais
+        clean_directory(app_path, console, exclude_files=['update.py', 'version.txt', 'docs', '.github'])
+
         extract_zip(zip_path, app_path, console)
         shutil.rmtree(download_path)
 
+        # Atualizar o arquivo de versão local
         version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
         response = requests.get(version_url, timeout=10)
         with open(os.path.join(app_path, 'version.txt'), 'w') as file:
@@ -149,6 +157,7 @@ def update_application(repo_url, app_path, console):
         console.insert(tk.END, "Atualização concluída com sucesso!\n")
     except Exception as e:
         console.insert(tk.END, f"Erro durante a atualização: {e}\n")
+
 # ==========================
 # Interface Gráfica
 # ==========================
