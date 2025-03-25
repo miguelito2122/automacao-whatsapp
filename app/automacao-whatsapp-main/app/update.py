@@ -51,81 +51,23 @@ def extract_zip(zip_path, extract_to, console):
     
     console.insert(tk.END, "Extração concluída.\n")
 
-def check_version(repo_url, app_path, console):
-    console.insert(tk.END, "Verificando versão...\n")
-    version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
-    try:
-        # Faz o download do arquivo de versão
-        response = requests.get(version_url, timeout=10)
-        if response.status_code != 200:
-            raise ValueError(f"Erro ao obter a versão remota: {response.status_code}")
-        remote_version = response.text.strip()
-        console.insert(tk.END, f"Versão remota: {remote_version}\n")
-    except requests.exceptions.RequestException as e:
-        console.insert(tk.END, f"Erro ao verificar a versão remota: {e}\n")
-        raise ValueError(f"Erro ao verificar a versão remota: {e}")
-
-    # Verifica a versão local
-    local_version_file = os.path.join(os.path.dirname(app_path), 'version.txt')
-    if os.path.exists(local_version_file):
-        with open(local_version_file, 'r') as file:
-            local_version = file.read().strip()
-        console.insert(tk.END, f"Versão local: {local_version}\n")
-    else:
-        console.insert(tk.END, "Versão local não encontrada. Atualização necessária.\n")
-        return True  # Atualização necessária
-
-    # Compara as versões
-    if remote_version != local_version:
-        console.insert(tk.END, "Versões diferentes. Atualização necessária.\n")
-        return True  # Atualização necessária
-    else:
-        console.insert(tk.END, "Versões iguais. Nenhuma atualização necessária.\n")
-        return False  # Nenhuma atualização necessária
-    
-def clean_directory(directory, console):
-    console.insert(tk.END, "Limpando o diretório antes da atualização...\n")
-    for item in os.listdir(directory):
-        item_path = os.path.join(directory, item)
-        if os.path.isfile(item_path):
-            os.remove(item_path)
-        elif os.path.isdir(item_path):
-            shutil.rmtree(item_path)
-            console.insert(tk.END, f"Removido diretório: {item_path}\n")
-    console.insert(tk.END, "Limpeza concluída.\n")
-
 def update_application(repo_url, app_path, console):
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
-
-        if not check_version(repo_url, app_path, console):
-            console.insert(tk.END, "Nenhuma atualização necessária.\n")
-            return
-        
-
         download_path = os.path.join(app_path, 'update')
         os.makedirs(download_path, exist_ok=True)
         zip_path = download_latest_release(repo_url, download_path, console)
-        clean_directory(app_path, console)
         extract_zip(zip_path, app_path, console)
         shutil.rmtree(download_path)
-
-        # Atualiza a versão local
-        version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
-        response = requests.get(version_url, timeout=10)
-        with open(os.path.join(app_path, 'version.txt'), 'w') as file:
-            file.write(response.text.strip())
-        
         console.insert(tk.END, "Atualização concluída com sucesso!\n")
     except Exception as e:
         console.insert(tk.END, f"Erro durante a atualização: {e}\n")
-
 
 def show_update_window():
     # Configuração da janela principal
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
-    update_window.geometry("200x150")
+    update_window.geometry("500x400")
     update_window.resizable(False, False)
 
     # Status
