@@ -6,8 +6,8 @@
 
 ## Funcionalidades
 
-- **Envio de Mensagens:** Permite enviar mensagem carregadas `<code>`.txt `</code>` para números na planilha carregada `<code>`.xlsx `</code>.`
-- **Reconhecimento de Mensagens:** Reconhece imagens no Navegador `<code>`Chrome for Testing `</code>` e envia para IA.
+- **Envio de Mensagens:** Permite enviar mensagem carregadas `.txt`  para números na planilha carregada `.xlsx` `.`
+- **Reconhecimento de Mensagens:** Reconhece imagens no Navegador ``Chrome for Testing ``e envia para IA.
 - **Processamento com IA:** Envia mensagens para IA avaliar sentimentos (star rating).
 - **Atualização da Planilha:** Preenche as colunas da planilha com base nas respostas processadas.
 
@@ -25,15 +25,15 @@
 
 ---
 
-- Docker: Para Containerização da Aplicação (Distribuição).
+- NSIS: Para gerar Instalador do Aplicativo (Distribuição.)
 - PyInstaller: Para gerar Executável do Aplicativo (Distribuição).
 
 ## Requisitos
 
 - Python 3.9 ou superior.
-- Chrome for Testing `<code>`CfT `</code>` (para o Selenium).
+- Chrome for Testing  `CfT `(para o Selenium).
 - API-Keys para IA.
-- Planilhas .xlsx (Modelos na pasta Docs).
+- Planilhas `.xlsx` (Modelos na pasta Docs).
 
 ## Instalação
 
@@ -50,8 +50,8 @@
    ```
 3. ### Baixe o Chrome for Testing:
 
-   - Baixe e instale a versão Stable mais Recente do Chrome for Testing (CfT) `<code>`https://googlechromelabs.github.io/chrome-for-testing/`</code>.`
-   - Mova o `<code>`chrome.exe `</code>` para a mesma pasta onde está o executável.
+   - Baixe e instale a versão Stable mais Recente do Chrome for Testing `CfT` [https://googlechromelabs.github.io/chrome-for-testing/]()
+   - Mova o `chrome.exe` para a mesma pasta onde está o executável.
 4. ### Criptografe sua API Key:
 
    ```bash
@@ -59,7 +59,7 @@
    ```
 5. ### Prepara planilhas para dados:
 
-   - Selecionar um Exemplo da pasta `<code>`docs `</code>.`
+   - Selecionar um Exemplo da pasta `docs` `.`
 
 ## Como Usar
 
@@ -68,20 +68,19 @@
    - No terminal na pasta do projeto execute:
 
    ```bash
-   pyinstaller --onefile --windowed app/main.py
+   pyinstaller main.spec
    ```
-   - O argumento `<code>`--windowed `</code>` evita que o terminal apareça ao executar o aplicativo.
 2. Organize os arquivos
 
-   - O executável será gerado na pasta `<code>`dist/`</code>`. Mova o executável para a pasta de origem do projeto.
-   - Certifique-se de que as pastas `<code>`data/`</code>` e `<code>`app/`</code>` estejam na mesma pasta que o executável.
+   - O executável será gerado na pasta `"dist/`", mova o executável para a pasta de origem do projeto.
+   - Certifique-se de que as pastas `data/` e `app/` estejam na mesma pasta que o executável.
 3. Execute o Programa
 
    - Clique no executável que está na pasta raíz do projeto.
-   - Abrirá o `<code>`CfT `</code>` já aberto na página `<code>`https://web.whatsapp.com `</code>.`
+   - Abrirá o `CfT` já aberto na página `https://web.whatsapp.com` `.`
    - Escaneie o QR Code.
    - Volte ao Aplicativo e *aproveite!*
 4. Distribua o Aplicativo:
 
-   - Compacte a pasta `<code>`AUTOMACAO-WHATSAPP `</code>` e envie para outra máquina
+   - Compacte a pasta `AUTOMACAO-WHATSAP`P e envie para outra máquina
    - Na outra máquina, basta descompactar e clicar no main.exe.

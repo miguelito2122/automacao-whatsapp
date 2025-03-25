@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from notebook import Notebook
+from update import update_application
 
 class Root(tk.Tk):
     def __init__(self):
@@ -10,6 +11,7 @@ class Root(tk.Tk):
         self.resizable(False, False)
         self.centralizar_tela(self)
         # Notebook
+        self.atualizar = update_application()
         self.notebook = Notebook(self)
     def centralizar_tela(self, tela):
         tela.update_idletasks()
