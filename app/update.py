@@ -100,24 +100,42 @@ def check_version(repo_url, app_path, console, branch="main"):
     # Construindo o caminho para o arquivo de versão remota
     archive_path = f"archive/refs/heads/{branch}.zip"
     if archive_path in repo_url:
-        # Remover o caminho do arquivo ZIP e adicionar o caminho para o arquivo de versão
         version_url = repo_url.replace(archive_path, f"raw/{branch}/version.txt")
     else:
         console.insert(tk.END, f"Erro: O repo_url não contém o caminho esperado para a branch '{branch}'.\n")
         raise ValueError(f"The repo_url does not contain the expected archive path for branch '{branch}'.")
     
     try:
-        # Verificar a versão local
+        # Obter a versão remota
         response = requests.get(version_url, timeout=10)
         if response.status_code != 200:
-            raise ValueError(f"Erro ao obter a versão remota: {response.status_code}")
+            console.insert(tk.END, f"Erro ao verificar a versão remota: {response.status_code}\n")
+            return False
         remote_version = response.text.strip()
         console.insert(tk.END, f"Versão remota na branch '{branch}': {remote_version}\n") # Exemplo: '1.0.0'
-        local_version_path = os.path.join(app_path, 'version.txt') # Caminho do arquivo de versão local
+
+        # Obter a versão local
+        local_version_path = os.path.join(app_path, 'version.txt')
         if not os.path.exists(local_version_path):
             console.insert(tk.END, "Aviso: O arquivo de versão local não foi encontrado. Continuando a instalação...\n")
             return True
-    except Exception as e:
+        
+        with open(local_version_path, 'r') as file:
+            local_version = file.read().strip()
+        console.insert(tk.END, f"Versão local: {local_version}\n")
+
+        try:
+            if remote_version == local_version:
+                console.insert(tk.END, "A versão local é a mais recente.\n")
+                return False
+            else:
+                console.insert(tk.END, "Uma nova versão está disponível.\n")
+                return True
+        except Exception as e:
+            console.insert(tk.END, f"Erro ao comparar as versões: {e}\n")
+            raise ValueError(f"Erro ao comparar as versões: {e}")
+
+    except requests.exceptions.RequestException as e:
         console.insert(tk.END, f"Erro ao verificar a versão remota: {e}\n")
         raise ValueError(f"Erro ao verificar a versão remota: {e}")
     
@@ -190,7 +208,7 @@ def show_update_window():
     """Exibe a interface gráfica para o processo de atualização."""
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
-    update_window.geometry("300x400")
+    update_window.geometry("400x350")
     update_window.resizable(False, False)
 
     status_label = tk.Label(update_window, text="Status: Atualizando...", font=("Arial", 14, "bold"))
@@ -200,20 +218,23 @@ def show_update_window():
     console.pack(padx=10, pady=10)
     console.insert(tk.END, "Preparando para atualizar...\n")
 
-    def close_window():
-        update_window.destroy()
 
-    close_button = tk.Button(update_window, text="Fechar", command=close_window, state=tk.DISABLED)
-    close_button.pack(pady=10)
 
     def start_update():
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
         app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        update_application(repo_url, app_path, console)
-        status_label.config(text="Status: Atualização Concluída!")
-        close_button.config(state=tk.NORMAL)
+        check_version(repo_url, app_path, console)
 
-    update_window.after(100, start_update)
+
+
+        # update_application(repo_url, app_path, console)
+        # status_label.config(text="Status: Atualização Concluída!")
+        # close_button.config(state=tk.NORMAL)
+
+    # update_window.after(100, start_update)
+    close_button = tk.Button(update_window, text="Testar", command=start_update, state='active')
+    close_button.pack(pady=10)
+
     update_window.mainloop()
 
 if __name__ == '__main__':
