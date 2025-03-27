@@ -18,6 +18,7 @@ __pycache__/
 update
 data/planilhas/*.xlsx
 .vscode
+python-embedded
 
 # Distribuição / packaging
 .Python
