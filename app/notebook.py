@@ -62,10 +62,10 @@ class Notebook(ttk.Notebook):
 
         if getattr(sys, 'frozen', False):
             # O aplicativo está rodando como um executável
-            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.join(os.path.abspath(__file__), '..')))
         else:
             # O aplicativo está rodando em um ambiente de desenvolvimento
-            base_path = os.path.dirname(os.path.abspath(__file__))
+            base_path = os.path.dirname(os.path.join(os.path.abspath(__file__), '..'))
 
         # Carrega e redimensiona a imagem de conexão (arquivo PNG)
         imagem_agente = Image.open(os.path.join(base_path, 'data', 'agent.png'))
