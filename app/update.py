@@ -4,6 +4,7 @@ import zipfile
 import requests
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
+from packaging.version import Version, InvalidVersion
 
 # ==========================
 # Funções de Download e Mock
@@ -55,7 +56,7 @@ def mock_download_latest_release(repo_url, download_path, console):
 # Funções de Manipulação de Arquivos
 # ==========================
 
-def extract_zip(zip_path, extract_to, console):
+def extract_zip_item(zip_path, extract_to, item, console):
     """Extrai os arquivos de um ZIP para o diretório especificado."""
     console.insert(tk.END, "Extraindo arquivos...\n")
     if not zipfile.is_zipfile(zip_path):
@@ -63,10 +64,22 @@ def extract_zip(zip_path, extract_to, console):
         raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
     
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        file_list = zip_ref.namelist()
-        console.insert(tk.END, f"Arquivos no ZIP: {file_list}\n")
-        zip_ref.extractall(extract_to)
-    
+        for file in zip_ref.namelist():
+            if file.startswith(f'automacao-whatsapp-main/{item}/') and not file.endswith('/'):
+                if file.endswith('update.py'):
+                    console.insert(tk.END, f"Preservando: {file}\n")
+                    continue
+
+                relative_path = os.path.relpath(file, f'automacao-whatsapp-main/{item}/')
+                target_path = os.path.join(extract_to, relative_path)
+
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+                with zip_ref.open(file) as source, open(target_path, 'wb') as target:
+                    shutil.copyfileobj(source, target)
+                console.insert(tk.END, f"Extraindo: {file}. Para: {extract_to}\n")
+
+
     console.insert(tk.END, "Extração concluída.\n")
 
 def clean_directory(directory, console, exclude_files=[]):
@@ -112,6 +125,9 @@ def check_version(repo_url, app_path, console, branch="main"):
             console.insert(tk.END, f"Erro ao verificar a versão remota: {response.status_code}\n")
             return False
         remote_version = response.text.strip()
+        if not remote_version:
+            console.insert(tk.END, "Aviso: A versão remota está vazia. Parando a instalação...\n")
+            raise ValueError("A versão remota está vazia.")
         console.insert(tk.END, f"Versão remota na branch '{branch}': {remote_version}\n") # Exemplo: '1.0.0'
 
         # Obter a versão local
@@ -122,16 +138,19 @@ def check_version(repo_url, app_path, console, branch="main"):
         
         with open(local_version_path, 'r') as file:
             local_version = file.read().strip()
+        if not local_version:
+            console.insert(tk.END, "Aviso: O arquivo de versão local está vazio. Continuando a instalação...\n")
+            return True
         console.insert(tk.END, f"Versão local: {local_version}\n")
 
         try:
-            if remote_version == local_version:
+            if Version(local_version) > Version(remote_version):
                 console.insert(tk.END, "A versão local é a mais recente.\n")
                 return False
             else:
                 console.insert(tk.END, "Uma nova versão está disponível.\n")
                 return True
-        except Exception as e:
+        except InvalidVersion as e:
             console.insert(tk.END, f"Erro ao comparar as versões: {e}\n")
             raise ValueError(f"Erro ao comparar as versões: {e}")
 
@@ -143,17 +162,17 @@ def check_version(repo_url, app_path, console, branch="main"):
 # Função Principal de Atualização
 # ==========================
 
-def update_application(repo_url, app_path, console):
+def update_application(repo_url, repo_path, console):
     """Gerencia o processo de atualização do aplicativo."""
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
-        if not check_version(repo_url, app_path, console, branch='main'):
-            console.insert(tk.END, "Nenhuma atualização necessária. O aplicativo já está na versão mais recente.\n")
+        if not check_version(repo_url, repo_path, console, branch='main'):
+            console.insert(tk.END, "Nenhuma atualização necessária. Processo interrompido.\n")
             return
 
         console.insert(tk.END, "Iniciando o download do último release...\n")
         # Diretório de download movido para a raiz do projeto
-        download_path = os.path.join(app_path, 'update')
+        download_path = os.path.join(repo_path, 'update')
         os.makedirs(download_path, exist_ok=True)
 
         USE_MOCK = False  # Altere para False para usar o download real
@@ -163,37 +182,27 @@ def update_application(repo_url, app_path, console):
         else:
             zip_path = download_latest_release(repo_url, download_path, console)
 
-        if not os.path.isfile(zip_path):
-            console.insert(tk.END, "Erro: O caminho especificado não é um arquivo.\n")
-            raise ValueError("O caminho especificado não é um arquivo.")
-
-        if not zipfile.is_zipfile(zip_path):
-            console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
-            raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
-        
-        # Excluir apenas arquivos não essenciais
+        # Limpar o diretório 'app' antes da atualização
+        app_path = os.path.join(repo_path, 'app')
         clean_directory(app_path, console, exclude_files=[
-            'update.py', 
-            'version.txt', 
-            'docs', 
-            '.github', 
-            'tests', 
-            'main.spec', 
-            'LICENSE', 
-            'README.md', 
-            '.gitignore',
-            '.vscode',
-            '.venv',
-            '__pycache__',
-            '.pytest_cache'
+            'update.py'
         ])
-        extract_zip(zip_path, app_path, console)
+
+        data_path = os.path.join(repo_path, 'data')
+        clean_directory(data_path, console, exclude_files=[
+            'planilhas'
+        ])
+
+        extract_zip_item(zip_path, app_path, 'app', console)
+        extract_zip_item(zip_path, data_path, 'data', console)
+
+    
         shutil.rmtree(download_path)
 
         # Atualizar o arquivo de versão local
         version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
         response = requests.get(version_url, timeout=10)
-        with open(os.path.join(app_path, 'version.txt'), 'w') as file:
+        with open(os.path.join(repo_path, 'version.txt'), 'w') as file:
             file.write(response.text.strip())
         
         console.insert(tk.END, "Atualização concluída com sucesso!\n")
@@ -218,20 +227,15 @@ def show_update_window():
     console.pack(padx=10, pady=10)
     console.insert(tk.END, "Preparando para atualizar...\n")
 
-
-
     def start_update():
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-        app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        check_version(repo_url, app_path, console)
+        repo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        update_application(repo_url, repo_path, console)
 
+        status_label.config(text="Status: Atualização Concluída!")
+        close_button.config(state=tk.NORMAL)
 
-
-        # update_application(repo_url, app_path, console)
-        # status_label.config(text="Status: Atualização Concluída!")
-        # close_button.config(state=tk.NORMAL)
-
-    # update_window.after(100, start_update)
+    update_window.after(100, start_update)
     close_button = tk.Button(update_window, text="Testar", command=start_update, state='active')
     close_button.pack(pady=10)
 

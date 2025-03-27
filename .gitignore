@@ -4,7 +4,7 @@ credenciais-cripto.key
 # Chrome for Testing
 chrome.exe
 
-# Mensagem de texto
+# Mensagem de texto teste
 texto.txt
 
 # Byte-compiled / optimized / DLL files
@@ -15,6 +15,7 @@ __pycache__/
 .pytest_cache
 
 # Arquivos Sensíveis
+update
 data/planilhas/*.xlsx
 .vscode
 
