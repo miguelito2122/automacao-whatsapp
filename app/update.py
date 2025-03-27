@@ -58,7 +58,7 @@ def mock_download_latest_release(repo_url, download_path, console):
 
 def extract_zip_item(zip_path, extract_to, item, console):
     """Extrai os arquivos de um ZIP para o diretório especificado."""
-    console.insert(tk.END, "Extraindo arquivos...\n")
+    console.insert(tk.END, f"Extraindo arquivos para {extract_to}...\n")
     if not zipfile.is_zipfile(zip_path):
         console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
         raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
@@ -67,7 +67,6 @@ def extract_zip_item(zip_path, extract_to, item, console):
         for file in zip_ref.namelist():
             if file.startswith(f'automacao-whatsapp-main/{item}/') and not file.endswith('/'):
                 if file.endswith('update.py'):
-                    console.insert(tk.END, f"Preservando: {file}\n")
                     continue
 
                 relative_path = os.path.relpath(file, f'automacao-whatsapp-main/{item}/')
@@ -77,26 +76,21 @@ def extract_zip_item(zip_path, extract_to, item, console):
 
                 with zip_ref.open(file) as source, open(target_path, 'wb') as target:
                     shutil.copyfileobj(source, target)
-                console.insert(tk.END, f"Extraindo: {file}. Para: {extract_to}\n")
-
 
     console.insert(tk.END, "Extração concluída.\n")
 
 def clean_directory(directory, console, exclude_files=[]):
     """Limpa o diretório antes da atualização, preservando arquivos essenciais."""
-    console.insert(tk.END, "Limpando o diretório antes da atualização...\n")
+    console.insert(tk.END, f"Limpando o diretório {directory} antes da atualização...\n")
     for item in os.listdir(directory):
         item_path = os.path.join(directory, item)
         if item in exclude_files:
-            console.insert(tk.END, f"Preservando: {item_path}\n")
             continue
         try:
             if os.path.isfile(item_path):
                 os.remove(item_path)
-                console.insert(tk.END, f"Removido arquivo: {item_path}\n")
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
-                console.insert(tk.END, f"Removido diretório: {item_path}\n")
         except Exception as e:
             console.insert(tk.END, f"Erro ao remover {item_path}: {e}\n")
     console.insert(tk.END, "Limpeza concluída.\n")
@@ -144,8 +138,8 @@ def check_version(repo_url, app_path, console, branch="main"):
         console.insert(tk.END, f"Versão local: {local_version}\n")
 
         try:
-            if Version(local_version) > Version(remote_version):
-                console.insert(tk.END, "A versão local é a mais recente.\n")
+            if Version(local_version) == Version(remote_version):
+                console.insert(tk.END, "A versão local já está atualizada.\n")
                 return False
             else:
                 console.insert(tk.END, "Uma nova versão está disponível.\n")
@@ -219,6 +213,21 @@ def show_update_window():
     update_window.title("Atualização do Aplicativo")
     update_window.geometry("400x350")
     update_window.resizable(False, False)
+    def centralizar_tela(tela):
+        tela.update_idletasks()
+
+        # Calcula as coordenadas para centralização
+        largura_janela = tela.winfo_width()
+        altura_janela = tela.winfo_height()
+        largura_tela = tela.winfo_screenwidth()
+        altura_tela = tela.winfo_screenheight()
+
+        x = (largura_tela // 2) - (largura_janela // 2)
+        y = (altura_tela // 2) - (altura_janela // 2)
+
+        # Aplica a nova posição sem alterar o tamanho
+        return tela.geometry(f'+{x}+{y}')
+    centralizar_tela(update_window)
 
     status_label = tk.Label(update_window, text="Status: Atualizando...", font=("Arial", 14, "bold"))
     status_label.pack(pady=10)
@@ -231,14 +240,12 @@ def show_update_window():
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
         repo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         update_application(repo_url, repo_path, console)
-
         status_label.config(text="Status: Atualização Concluída!")
         close_button.config(state=tk.NORMAL)
 
-    update_window.after(100, start_update)
-    close_button = tk.Button(update_window, text="Testar", command=start_update, state='active')
+    update_window.after(200, start_update)
+    close_button = tk.Button(update_window, text="Fechar", command=update_window.destroy, state='disabled')
     close_button.pack(pady=10)
-
     update_window.mainloop()
 
 if __name__ == '__main__':
