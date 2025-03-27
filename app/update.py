@@ -179,7 +179,8 @@ def update_application(repo_url, repo_path, console):
         # Limpar o diretório 'app' antes da atualização
         app_path = os.path.join(repo_path, 'app')
         clean_directory(app_path, console, exclude_files=[
-            'update.py'
+            'update.py',
+            'main.exe'
         ])
 
         data_path = os.path.join(repo_path, 'data')
