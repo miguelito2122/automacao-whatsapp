@@ -62,7 +62,7 @@ class Notebook(ttk.Notebook):
 
         if getattr(sys, 'frozen', False):
             # O aplicativo está rodando como um executável
-            base_path = os.path.join(sys.MEIPASS, os.pardir)
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         else:
             # O aplicativo está rodando em um ambiente de desenvolvimento
             base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
