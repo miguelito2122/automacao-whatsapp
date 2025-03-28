@@ -40,9 +40,9 @@ class Root(tk.Tk):
 
         :return: None
         """
-        update_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'update.py')
+        update_script = os.path.join(os.path.dirname(sys.executable), 'update.py')
         if os.path.exists(update_script):
-            subprocess.run([sys.executable, update_script], check=True)
+            subprocess.run(['python', update_script], check=True, shell=True)
         else:
             print(f"Erro: O arquivo {update_script} não foi encontrado.")
     def centralizar_tela(self, tela):
