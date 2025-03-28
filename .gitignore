@@ -16,7 +16,6 @@ __pycache__/
 
 # Arquivos Sensíveis
 update
-data/planilhas/*.xlsx
 .vscode
 python-embedded
 
