@@ -42,16 +42,10 @@ MANIFEST
 
 # PyInstaller
 *.manifest
-*.spec
 
 # Ambientes / envs
 .env
 .venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Docker
 *.log
