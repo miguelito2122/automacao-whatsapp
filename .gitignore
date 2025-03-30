@@ -13,6 +13,7 @@ __pycache__/
 
 # Distribuição / packaging / PyInstaller
 build/
+dist/
 
 # Ambientes / envs
 .env
