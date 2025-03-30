@@ -2,6 +2,7 @@
 Módulo que contém as configurações do programa.
 """
 
+import os
 import sys
 import tkinter as tk
 from tkinter import messagebox
@@ -124,3 +125,20 @@ def launch_error(msg, erro):
 
     messagebox.showerror('Erro', f'{msg}\nTipo de erro: {erro}')
     sys.exit(1)
+
+def printar_arquivos(base_path):
+    """
+    Imprime a lista de arquivos em um diretório e seus subdiretórios.
+
+    Percorre o diretório especificado por `base_path` e seus subdiretórios,
+    imprimindo o caminho absoluto de cada arquivo encontrado.
+
+    Args:
+        base_path (str): O diretório a ser percorrido.
+
+    Returns:
+        None
+    """
+    for root, dirs, files in os.walk(base_path):
+        for file in files:
+            print(os.path.join(root, file))

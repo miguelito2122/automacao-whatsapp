@@ -51,30 +51,37 @@ class Root(tk.Tk):
 
         :return: None
         """
-        print(base_path)
         try:
             if getattr(sys, 'frozen', False):
                 update_script = os.path.join(base_path, 'update/', 'update.py')
                 version_txt = os.path.join(base_path, 'version.txt')
-                print(version_txt)
             else:
                 update_script = os.path.join(base_path, 'app', 'update.py')
                 version_txt = os.path.join(base_path, 'version.txt')
-                print(version_txt)
         except AttributeError as e:
-            launch_error('Erro ao obter o caminho base (root.py)', e)
-
-        # for root, dirs, files in os.walk(base_path):
-        #     for file in files:
-        #         print(os.path.join(root, file))
-
+            launch_error('Erro ao obter os scripts e txt (root.py)', e)
 
         if os.path.exists(update_script):
             try:
-                repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-                response = requests.get(repo_url, timeout=10)
+                repo_url = 'https://raw.githubusercontent.com/miguelito2122/automacao-whatsapp/refs/heads/main/'
+                versao_remota = repo_url + 'version.txt'
+                try:
+                    response = requests.get(versao_remota, timeout=10)
+                except requests.exceptions.RequestException as e:
+                    launch_error('Erro de conexão (root.py)', e)
                 if response.status_code == 200:
-                    print('OK')
+                    versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
+                    if response.content.decode('utf-8') != versao_atual:
+                        resposta = messagebox.askyesno('Atualização disponível', 'Deseja atualizar para a versão mais recente?')
+                        if resposta:
+                            # subprocess.run([sys.executable, update_script])
+                            messagebox.showinfo('Atualização concluida', 'A atualização foi concluida com sucesso')
+                            self.destroy()
+                            sys.exit(0)
+                        else:
+                            messagebox.showinfo('Atualização', 'Atualização cancelada pelo usuário')
+                    else:
+                        messagebox.showinfo('Atualização', 'A versão mais recente do aplicativo ja foi instalada')
             except subprocess.CalledProcessError as e:
                 launch_error('Erro ao atualizar o aplicativo', e)
         else:

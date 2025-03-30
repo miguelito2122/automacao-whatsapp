@@ -20,6 +20,7 @@ def get_base_path():
     try:
         if getattr(sys, 'frozen', False):
             base_path = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
+            print(base_path)
         else:
             base_path = Path(__file__).resolve().parent.parent
 
