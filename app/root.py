@@ -1,25 +1,29 @@
 """
 Este módulo contém a classe Root, que representa a janela principal do aplicativo.
 """
-
-import tkinter as tk
-import subprocess
+from tkinter import messagebox
 import os
 import sys
-from notebook import Notebook
-
+import tkinter as tk
+try:
+    import requests
+    from config import launch_error
+    from notebook import Notebook
+except ImportError as e:
+    messagebox.showerror('Erro', f'Erro ao importar módulos(root.py)\nErro: {e}')
+    sys.exit(1)
 
 class Root(tk.Tk):
-    def __init__(self):
+    def __init__(self, base_path=None):
         """
-        Initialize the main application window.
+        Inicializa a janela principal do aplicativo.
 
-        This constructor sets up the main window of the application by configuring its
-        title, size, and layout properties. It also initializes the application's
-        update process and notebook component.
+        Este construtor configura a janela principal do aplicativo, definindo seu
+        título, tamanho e propriedades de layout. Ele também inicializa o processo
+        de atualização do aplicativo e o componente notebook.
 
-        Attributes:
-            notebook (Notebook): The main notebook interface for the application.
+        Atributos:
+            notebook (Notebook): A interface notebook principal do aplicativo.
         """
 
         super().__init__()
@@ -27,24 +31,45 @@ class Root(tk.Tk):
         self.geometry('400x300')
         self.resizable(False, False)
         self.centralizar_tela(self)
-        # Notebook
-        self.atualizar_aplicativo()
-        self.notebook = Notebook(self)
-    def atualizar_aplicativo(self):
+        try:
+            self.checar_atualizacao(base_path)
+            self.base_path = base_path
+        except AttributeError as e:
+            launch_error('Erro ao obter o caminho base (root.py)', e)
+        try:
+            self.notebook = Notebook(self, self.base_path)
+        except Exception as e:
+            launch_error('Erro ao abrir Notebook (root.py)', e)
+    def checar_atualizacao(self, base_path):
         """
-        Atualiza o aplicativo verificando se h  uma vers o mais recente no reposit rio.
+        Atualiza o aplicativo verificando se há uma versão mais recente no repositório.
 
-        Se o arquivo update.py existir, ele   executado com o interpretador Python para
-        verificar se h  uma vers o mais recente do aplicativo no reposit rio. Se uma vers o
-        mais recente for encontrada, o aplicativo   atualizado automaticamente.
+        Se o arquivo update.py existir, ele é executado com o interpretador Python para
+        verificar se há uma versão mais recente do aplicativo no repositório. Se uma versão
+        mais recente for encontrada, o aplicativo é atualizado automaticamente.
 
         :return: None
         """
-        update_script = os.path.join(os.path.dirname(sys.executable), 'update.py')
+        print(base_path)
+        try:
+            update_script = os.path.join(base_path, 'update/', 'update.py')
+        except AttributeError as e:
+            launch_error('Erro ao obter o caminho base (root.py)', e)
+
+        # for root, dirs, files in os.walk(base_path):
+        #     for file in files:
+        #         print(os.path.join(root, file))
+
+
         if os.path.exists(update_script):
-            subprocess.run(['python', update_script], check=True, shell=True)
+            try:
+                response = 
+
+
+            except subprocess.CalledProcessError as e:
+                launch_error('Erro ao atualizar o aplicativo', e)
         else:
-            print(f"Erro: O arquivo {update_script} não foi encontrado.")
+            launch_error('Arquivo update.py nao encontrado', 'RaisedError')
     def centralizar_tela(self, tela):
         """
         Centraliza a janela na tela do monitor.

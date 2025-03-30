@@ -1,12 +1,6 @@
 # Senhas
 credenciais-cripto.key
 
-# Chrome for Testing
-chrome.exe
-
-# Mensagem de texto teste
-texto.txt
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -15,32 +9,10 @@ __pycache__/
 .pytest_cache
 
 # Arquivos Sensíveis
-update
 .vscode
-python-embedded
 
-# Distribuição / packaging
-.Python
+# Distribuição / packaging / PyInstaller
 build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
 
 # Ambientes / envs
 .env

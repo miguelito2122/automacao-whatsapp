@@ -111,3 +111,4 @@ class ToolTip:
         self.tipwindow = None
         if tw:
             tw.destroy()
+

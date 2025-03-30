@@ -1,28 +1,33 @@
 """
-Este módulo contém a classe Notebook, que é uma subclasse da classe ttk.Notebook.
-Ela é responsável por configurar e adicionar frames para as abas de Conex o, Check-in e
-Check-out ao notebook. A classe Notebook inicializa as frames para as abas de Conex o,
-Check-in e Check-out criando instâncias das respectivas classes e adicionando-as ao widget
-notebook com rótulos e estados apropriados.
+Este módulo contém a classe Notebook, uma subclasse de ttk.Notebook. Ela é responsável por
+configurar e adicionar frames para as abas de Conex o, Check-in e Check-out ao notebook.
+
+A classe Notebook inicializa as frames para as abas de Conex o, Check-in e Check-out
+criando instâncias das respectivas classes e adicionando-as ao widget notebook com rótulos
+e estados apropriados.
 
 A classe Notebook também fornece métodos para abrir e salvar arquivos Excel. O método
 open_file permite que o usuário selecione um arquivo Excel para abrir, enquanto o método
-save_file permite que o usuário salve o arquivo Excel atual. O método save_file também atualiza
-o status do arquivo Excel atual na barra de status.
+save_file permite que o usuário salve o arquivo Excel atual. Além disso, o método save_file
+atualiza o status do arquivo Excel atual na barra de status.
 """
 
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import os
 import sys
-from openpyxl import load_workbook
-from checkin import AppCheckin
-from conexao import Conexao
-from checkout import AppCheckout
-from PIL import ImageTk, Image
-
+try:
+    from config import launch_error
+    from openpyxl import load_workbook
+    from checkin import AppCheckin
+    from conexao import Conexao
+    from checkout import AppCheckout
+    from PIL import ImageTk, Image
+except ImportError as e:
+    messagebox.showerror('Erro', f'Erro ao importar módulos(notebook.py)\nErro: {e}')
+    sys.exit(1)
 
 class Notebook(ttk.Notebook):
-    def __init__(self, parent):
+    def __init__(self, parent, base_path=None):
         """
         Inicializa o objeto Notebook com o pai parent.
 
@@ -31,15 +36,21 @@ class Notebook(ttk.Notebook):
         super().__init__(parent)
         self.parent = parent
         self.pack(fill='both', expand=True)
-        self.carregar_imagens()
-        self.abrir_abas(self)
+        try:
+            self.carregar_imagens(base_path)
+        except Exception as e:
+            launch_error('Erro ao carregar imagens (notebook.py)', e)
+        try:
+            self.abrir_abas(self)
+        except Exception as e:
+            launch_error('Erro ao abrir abas (notebook.py)', e)
     def abrir_abas(self, notebook):
         """
-        Configures and adds the frames for Conexão, Check-in, and Check-out to the notebook.
+        Configura e adiciona os frames para Conexão, Check-in e Check-out ao notebook.
 
-        This method initializes the frames for the Conexão, Check-in, and Check-out 
-        tabs by creating instances of the respective classes and adding them to the 
-        notebook widget with appropriate labels and states.
+        Este método inicializa os frames para as abas de Conexão, Check-in e Check-out
+        criando instâncias das respectivas classes e adicionando-as ao widget notebook
+        com rótulos e estados apropriados.
         """
 
         self.frame_conexao = Conexao(notebook)
@@ -49,21 +60,17 @@ class Notebook(ttk.Notebook):
         notebook.add(self.frame_conexao, text='Conexão')
         notebook.add(self.frame_checkin, state='normal', text='Check-in')
         notebook.add(self.frame_checkout, state='normal', text='Check-out')
-    def carregar_imagens(self):        
+    def carregar_imagens(self, base_path):
         """
-        Loads and resizes various icons for the application's UI.
+        Carrega e redimensiona várias imagens para a interface do aplicativo.
 
-        This method determines the base path for the executable or development
-        environment and loads images from the 'data' directory. Each image is
-        resized to fit specific UI components and is converted to a PhotoImage
-        object for use within the Tkinter interface. Icons include agent, calendar,
-        WhatsApp, upload, show, refresh, and send, each with designated sizes.
+        Este método determina o caminho base para o executável ou ambiente de
+        desenvolvimento e carrega imagens do diretório 'data'. Cada imagemé redimensionada
+        para se adequar a componentes específicos da interface e é convertida em um
+        objeto PhotoImage para uso na interface Tkinter. As imagens incluem agente,
+        calendário, WhatsApp, upload, mostrar, refresh e enviar, cada uma com tamanhos
+        designados.
         """
-
-        if getattr(sys, 'frozen', False):
-            base_path = os.path.dirname(os.path.dirname(sys.executable))
-        else:
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         # Carrega e redimensiona a imagem de conexão (arquivo PNG)
         imagem_agente = Image.open(os.path.join(base_path, 'data', 'agent.png'))
@@ -101,10 +108,10 @@ class Notebook(ttk.Notebook):
         self.icone_send = ImageTk.PhotoImage(imagem_send)
     def atualizar_status(self, texto, cor):
         """
-        Atualiza o label de conex o na aba de conex o.
+        Atualiza o label de conexão na aba de conexão.
 
         Se o texto for "Conectado!", habilita todas as abas.
-        Caso contr rio, desabilita todas as abas exceto a de conex o.
+        Caso contrário, desabilita todas as abas exceto a de conex o.
 
         :param texto: texto a ser exibido no label de conex o
         :param cor: cor do texto a ser exibido no label de conex o
@@ -144,9 +151,8 @@ class Notebook(ttk.Notebook):
                     row[coluna].value = status
                     print(f"Status atualizado para {telefone} na planilha.")
 
-            wb.save(caminho)                
+            wb.save(caminho)
             return True
         except (OSError, IOError) as e:
             print(f"Erro ao atualizar status na planilha: {str(e)}")
             return False
-        

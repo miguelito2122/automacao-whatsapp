@@ -2,7 +2,6 @@
 Este script é responsável por atualizar o aplicativo para a última versão disponível no repositório remoto.
 """
 
-import sys
 import os
 import shutil
 import zipfile
@@ -180,7 +179,7 @@ def update_application(repo_url, repo_path, console):
         # Limpar o diretório 'app' antes da atualização
         app_path = os.path.join(repo_path, 'app')
         clean_directory(app_path, console, exclude_files=[
-            'update.py',
+            'update.py'
         ])
 
         data_path = os.path.join(repo_path, 'data')
@@ -236,10 +235,7 @@ def show_update_window():
 
     def start_update():
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-        if getattr(sys, 'frozen', False):
-            repo_path = os.path.join(os.path.dirname(sys.executable), '..')
-        else:
-            repo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+        repo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         update_application(repo_url, repo_path, console)
         status_label.config(text="Status: Atualização Concluída!")
         close_button.config(state=tk.NORMAL)
