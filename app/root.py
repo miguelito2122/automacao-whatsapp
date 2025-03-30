@@ -4,6 +4,7 @@ Este módulo contém a classe Root, que representa a janela principal do aplicat
 from tkinter import messagebox
 import os
 import sys
+import subprocess
 import tkinter as tk
 try:
     import requests
@@ -52,7 +53,14 @@ class Root(tk.Tk):
         """
         print(base_path)
         try:
-            update_script = os.path.join(base_path, 'update/', 'update.py')
+            if getattr(sys, 'frozen', False):
+                update_script = os.path.join(base_path, 'update/', 'update.py')
+                version_txt = os.path.join(base_path, 'version.txt')
+                print(version_txt)
+            else:
+                update_script = os.path.join(base_path, 'app', 'update.py')
+                version_txt = os.path.join(base_path, 'version.txt')
+                print(version_txt)
         except AttributeError as e:
             launch_error('Erro ao obter o caminho base (root.py)', e)
 
@@ -63,9 +71,10 @@ class Root(tk.Tk):
 
         if os.path.exists(update_script):
             try:
-                response = 
-
-
+                repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
+                response = requests.get(repo_url, timeout=10)
+                if response.status_code == 200:
+                    print('OK')
             except subprocess.CalledProcessError as e:
                 launch_error('Erro ao atualizar o aplicativo', e)
         else:

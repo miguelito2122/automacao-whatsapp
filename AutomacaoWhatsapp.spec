@@ -8,7 +8,8 @@ a = Analysis(
     datas=[
         ('app/update.py', 'update'),
         ('data/*.png', 'data'),
-        ('data/*.gif', 'data')
+        ('data/*.gif', 'data'),
+        ('version.txt', '.')
         ],
     hiddenimports=[
         'PIL',
