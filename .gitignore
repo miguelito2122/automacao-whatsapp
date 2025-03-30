@@ -14,6 +14,7 @@ __pycache__/
 # Distribuição / packaging / PyInstaller
 build/
 dist
+releases
 
 # Ambientes / envs
 .env
