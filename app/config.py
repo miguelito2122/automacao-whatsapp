@@ -1,18 +1,21 @@
 """
 Módulo que contém as configurações do programa.
 """
+
+import sys
 import tkinter as tk
+from tkinter import messagebox
 
 class ToolTip:
     def __init__(self, widget, text):
         """
-        Initializes a ToolTip instance with a given widget and text.
+        Inicializa uma instância de ToolTip com um widget e um texto dados.
 
         Args:
-            widget: The widget to which the tooltip will be attached.
-            text: The text to display in the tooltip.
+            widget: O widget ao qual o tooltip ser  anexado.
+            text: O texto a ser exibido no tooltip.
 
-        Binds the mouse events for showing and hiding the tooltip to the widget.
+        Liga os eventos de mouse para mostrar e esconder o tooltip ao widget.
         """
 
         self.widget = widget
@@ -26,19 +29,19 @@ class ToolTip:
 
     def on_enter(self, event=None):
         """
-        Shows the tooltip when the mouse enters the widget.
+        Mostra o tooltip quando o mouse entra no widget.
 
         Args:
-            event (tkinter.Event): The event that triggered this method.
+            event (tkinter.Event): O evento que desencadeou este método.
         """
         self.schedule(event)
 
     def on_motion(self, event):
         """
-        Updates the position of the tooltip as the mouse moves over the widget.
+        Atualiza a posição do tooltip conforme o mouse se move sobre o widget.
 
         Args:
-            event (tkinter.Event): The event containing the current mouse position.
+            event (tkinter.Event): O evento contendo a posição atual do mouse.
         """
 
         if self.tipwindow:
@@ -48,32 +51,32 @@ class ToolTip:
 
     def on_leave(self, event=None):
         """
-        Hides the tooltip when the mouse leaves the widget.
+        Esconde o tooltip quando o mouse sai do widget.
 
         Args:
-            event (tkinter.Event): The event that triggered this method (optional).
+            event (tkinter.Event): O evento que desencadeou este método (opcional).
         """
         self.unschedule()
         self.hide_tip()
 
     def schedule(self, event=None):
         """
-        Schedules the tooltip to be shown after a short delay.
+        Agendar o tooltip para ser mostrado após um curto atraso.
 
         Args:
-            event (tkinter.Event): The event that triggered this method (optional).
+            event (tkinter.Event): O evento que desencadeou este método (opcional).
 
-        If the tooltip is already scheduled to be shown, this method will
-        cancel the previous schedule and schedule a new one.
+        Se o tooltip já estiver agendado para ser mostrado, este método irá
+        cancelar o agendamento anterior e agendar um novo.
         """
         self.unschedule()
         self.id = self.widget.after(500, lambda: self.show_tip(event.x_root, event.y_root))
 
     def unschedule(self):
         """
-        Cancels the tooltip to be shown if it is currently scheduled to be shown.
+        Cancela o agendamento de exibição do tooltip se ele estiver agendado para ser mostrado.
 
-        If the tooltip is already shown, this method will not hide it.
+        Se o tooltip já estiver sendo exibido, este método cancela o agendamento.
         """
         id_ = self.id
         self.id = None
@@ -82,13 +85,13 @@ class ToolTip:
 
     def show_tip(self, x, y):
         """
-        Shows the tooltip at the specified coordinates.
+        Mostra o tooltip nas coordenadas especificadas.
 
         Args:
-            x (int): The x-coordinate.
-            y (int): The y-coordinate.
+            x (int): A coordenada x.
+            y (int): A coordenada y.
 
-        If the tooltip is already shown, this method will not do anything.
+        Se o tooltip já estiver sendo exibido, este m étodo não fará nada.
         """
         if self.tipwindow or not self.text:
             return
@@ -102,13 +105,22 @@ class ToolTip:
 
     def hide_tip(self):
         """
-        Hides the tooltip if it is currently shown.
+        Esconde o tooltip se ele estiver atualmente visível.
 
-        Destroys the tooltip window and sets the instance variable
-        `tipwindow` to None.
+        Destrói a janela do tooltip e define a variável de instância
+        `tipwindow` como None.
         """
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
             tw.destroy()
 
+def launch_error(msg, erro):
+    """
+    Exibe uma mensagem de erro em uma janela modal.
+    
+    Exibe uma janela de erro com o título "Erro", o texto da mensagem e o erro.
+    """
+
+    messagebox.showerror('Erro', f'{msg}\nTipo de erro: {erro}')
+    sys.exit(1)
