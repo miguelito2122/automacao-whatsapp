@@ -18,8 +18,8 @@ def get_base_path():
     """ Resolve caminhos para ambos os modos: desenvolvimento e empacotado """
     try:
         if getattr(sys, 'frozen', False):
-            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(sys.executable)))
-            print(base_path)
+            base_path = os.path.abspath(os.path.dirname(sys.executable))
+            print("release main.py",base_path)
         else:
             base_path = Path(__file__).resolve().parent.parent
 
@@ -32,9 +32,11 @@ if __name__ == '__main__':
         path = get_base_path()
         check = checar_updater(path)
         if check:
-            atualizar_updater(path)
+            print("Tentativa de Atualizar")
+            # atualizar_updater(path)
             sys.exit(0)
         else:
+            print("Iniciado Root ", path, " Check: ",check)
             app = Root(path)
             app.mainloop()
     except Exception as e:

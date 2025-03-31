@@ -99,7 +99,7 @@ def clean_directory(directory, console, exclude_files=None):
 # Função Principal de Atualização
 # ==========================
 
-def update_application(repo_url, repo_path, console, debug=False):
+def update_application(repo_url, repo_path, console, debug_mode=False):
     """Gerencia o processo de atualização do aplicativo."""
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
@@ -109,7 +109,7 @@ def update_application(repo_url, repo_path, console, debug=False):
         download_path = os.path.join(repo_path, 'release')
         os.makedirs(download_path, exist_ok=True)
 
-        if debug:
+        if debug_mode:
             mock_download_latest_release(download_path, console)
         else:
             download_latest_release(repo_url, download_path, console)
@@ -163,12 +163,13 @@ def centralizar_tela(tela):
 
     # Aplica a nova posição sem alterar o tamanho
     return tela.geometry(f'+{x}+{y}')
-def show_update_window(debug=False):
+def show_update_window(debug_mode, repo_path):
     """Exibe a interface gráfica para o processo de atualização."""
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
     update_window.geometry("400x350")
     update_window.resizable(False, False)
+    path = repo_path
 
     centralizar_tela(update_window)
 
@@ -181,21 +182,11 @@ def show_update_window(debug=False):
     console.pack(padx=10, pady=10)
     console.insert(tk.END, "Preparando para atualizar...\n")
 
-    if getattr(sys, 'frozen', False):
-        debug = True # Alterado para True para Testes
-        repo_path = os.path.join(os.path.dirname(sys.executable), '_internal')
-        print('release',repo_path)
-    else:
-        debug = True
-        repo_path = Path(__file__).resolve().parent.parent
-        print('debug',repo_path)
-
-    def start_update(debug=False):
+    def start_update(debug_mode, base_directory):
         """Inicia o processo de atualização."""
         repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-
         try:
-            update_application(repo_url, repo_path, console, debug)
+            update_application(repo_url, base_directory, console, debug_mode)
             status_label.config(text="Status: Atualização Concluída!")
             close_button.config(state=tk.NORMAL)
         except Exception as e:
@@ -204,9 +195,9 @@ def show_update_window(debug=False):
     button_frame = tk.Frame(update_window)
     button_frame.pack(pady=5)
 
-    if debug:
+    if debug_mode:
         start_update_button = tk.Button(button_frame, text="Iniciar Atualização",
-                                        command=lambda: start_update(debug=True))
+                                        command=lambda: start_update(debug_mode, path))
         start_update_button.pack(pady=10, side='left')
 
     close_button = tk.Button(button_frame, text="Fechar",
@@ -215,11 +206,21 @@ def show_update_window(debug=False):
 
     update_window.mainloop()
 
-    if not debug:
-        update_window.after(200, start_update)
+    if not debug_mode:
+        update_window.after(200, lambda: start_update(debug_mode, path))
 
 if __name__ == '__main__':
-    show_update_window()
+    if getattr(sys, 'frozen', False):
+        DEBUG = True # Alterado para True para Testes
+        base_path = os.path.join(os.path.dirname(sys.executable), '_internal')
+        print('release', base_path)
+        show_update_window(DEBUG, base_path)
+    else:
+        DEBUG = True
+        base_path = Path(__file__).resolve().parent.parent
+        print('debug', base_path)
+        show_update_window(DEBUG, base_path)
+
 
 
 # ==========================

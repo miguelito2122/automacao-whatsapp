@@ -55,55 +55,61 @@ class Root(tk.Tk):
         versao_remota = repo_url + 'version.txt'
         try:
             if getattr(sys, 'frozen', False):
-                update_exec = os.path.join(base_path, 'update.exe')
-                version_txt = os.path.join(base_path, '_internal', 'version.txt')
+                update_exec = os.path.join(base_path,'update')
+                version_txt = os.path.join(base_path, '_internal','version.txt')
                 print('frozen\n', "Update:", update_exec, '\n', "Version:",version_txt)
             else:
                 update_exec = os.path.join(base_path, 'app', 'update.py')
                 version_txt = os.path.join(base_path, 'version.txt')
                 print('debug\n', "Update:", update_exec, '\n', "Version:",version_txt)
-        except AttributeError as e:
+        except Exception as e:
             launch_error('Erro ao obter os scripts e txt (root.py)', e)
 
-        if os.path.exists(update_exec):
-            try:
-                try:
-                    response = requests.get(versao_remota, timeout=10)
-                except requests.exceptions.RequestException as e:
-                    launch_error('Erro ao obter versão remota (root.py)', e)
-                if response.status_code == 200:
-                    versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
-                    if response.content.decode('utf-8') != versao_atual:
-                        resposta = messagebox.askyesno('Atualização disponível', 'Deseja atualizar para a versão mais recente?')
-                        if resposta:
-                            self.destroy()
-                            try:
-                                if getattr(sys, 'frozen', False):
-                                    # Executa o update.exe (gerado pelo PyInstaller)
-                                    process = subprocess.run(
-                                        [update_exec],
-                                        check=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        text=True  # Windows: exibe o console
-                                    )
-                                    print("SAÍDA:", process.stdout)
-                                    print("ERROS", process.stderr)
-                                    sys.exit(0)
-                                else:
-                                    # Ambiente de desenvolvimento
-                                    subprocess.run([sys.executable, update_exec], check=True)
-                                    sys.exit(0)
-                            except Exception as e:
-                                launch_error('Erro ao atualizar o aplicativo', e)
-                        else:
-                            messagebox.showinfo('Atualização', 'Atualização cancelada pelo usuário')
-                    else:
-                        messagebox.showinfo('Atualização', 'A versão mais recente do aplicativo ja foi instalada')
-            except Exception as e:
-                launch_error('Erro ao atualizar o aplicativo', e)
-        else:
+        if not os.path.exists(update_exec):
             launch_error('Arquivo update.py nao encontrado', 'RaisedError')
+
+        try:
+            response = requests.get(versao_remota, timeout=10)
+        except requests.exceptions.RequestException as e:
+            launch_error('Erro ao obter versão remota (root.py)', e)
+
+        if response.status_code != 200:
+            launch_error('Erro ao obter versão atual', 'RaisedError')
+
+        versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
+
+        if response.content.decode('utf-8') == versao_atual:
+            messagebox.showinfo('Atualização',
+                                'A versão mais recente do aplicativo ja foi instalada')
+
+        resposta = messagebox.askyesno('Atualização disponível',
+                                        'Deseja atualizar para a versão mais recente?')
+
+        if resposta:
+            self.destroy()
+        else:
+            messagebox.showinfo('Atualização', 'Atualização cancelada pelo usuário')
+            return
+
+        try:
+            if getattr(sys, 'frozen', False):
+                # Executa o update.exe (gerado pelo PyInstaller)
+                process = subprocess.run(
+                    [update_exec],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True  # Windows: exibe o console
+                )
+                print("SAÍDA:", process.stdout)
+                print("ERROS", process.stderr)
+                sys.exit(0)
+            else:
+                # Ambiente de desenvolvimento
+                subprocess.run([sys.executable, update_exec], check=True)
+                sys.exit(0)
+        except Exception as e:
+            launch_error('Erro ao atualizar o aplicativo', e)
     def centralizar_tela(self, tela):
         """
         Centraliza a janela na tela do monitor.

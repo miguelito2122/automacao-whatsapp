@@ -160,31 +160,37 @@ def checar_updater(base_path):
     versao_remota = repo_url + 'updaterversion.txt'
     try:
         if getattr(sys, 'frozen', False):
-            update_exec = os.path.join(base_path, 'update.exe')
-            version_txt = os.path.join(base_path, '_internal', 'updaterversion.txt')
+            update_exec = os.path.abspath(os.path.join(base_path, 'update'))
+            version_txt = os.path.abspath(os.path.join(base_path, '_internal/','updaterversion.txt'))
             print('release\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
         else:
-            update_exec = os.path.join(base_path, 'app', 'update.py')
-            version_txt = os.path.join(base_path, 'updaterversion.txt')
+            update_exec = os.path.abspath(os.path.join(base_path, 'app', 'update.py'))
+            version_txt = os.path.abspath(os.path.join(base_path, 'updaterversion.txt'))
             print('debug\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
     except AttributeError as e:
         launch_error('Erro ao obter os scripts e txt (root.py)', e)
 
     if os.path.exists(update_exec):
-        try:
-            response = requests.get(versao_remota, timeout=10)
-        except requests.exceptions.RequestException as e:
-            launch_error('Erro ao obter versão remota (root.py)', e)
-        if response.status_code == 200:
-            versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
-            if response.content.decode('utf-8') != versao_atual:
-                return True
-            else:
-                messagebox.showinfo('Atualização',
-                                    'A versão mais recente do Updater ja foi instalada')
-                return False
+        print('update.py encontrado\n')
     else:
-        launch_error('Arquivo update.py nao encontrado', 'RaisedError')
+        launch_error('Arquivo update.exe nao encontrado', 'RaisedError')
+
+    try:
+        response = requests.get(versao_remota, timeout=10)
+    except requests.exceptions.RequestException as e:
+        launch_error('Erro ao obter versão remota (root.py)', e)
+
+    if response.status_code != 200:
+        launch_error('Erro ao obter versão remota (root.py)', 'HTTPError')
+
+    versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
+    if response.content.decode('utf-8') != versao_atual:
+        return True
+    else:
+        messagebox.showinfo('Atualização',
+                            'A versão mais recente do Updater ja foi instalada')
+        return False
+
 
 def atualizar_updater(base_path):
     """
@@ -197,3 +203,4 @@ def atualizar_updater(base_path):
 
     :return: None
     """
+    pass

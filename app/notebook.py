@@ -37,7 +37,8 @@ class Notebook(ttk.Notebook):
         self.parent = parent
         self.pack(fill='both', expand=True)
         try:
-            self.carregar_imagens(base_path)
+            self.path = base_path
+            self.carregar_imagens(self.path)
         except Exception as e:
             launch_error('Erro ao carregar imagens (notebook.py)', e)
         try:
@@ -60,7 +61,7 @@ class Notebook(ttk.Notebook):
         notebook.add(self.frame_conexao, text='Conexão')
         notebook.add(self.frame_checkin, state='normal', text='Check-in')
         notebook.add(self.frame_checkout, state='normal', text='Check-out')
-    def carregar_imagens(self, base_path):
+    def carregar_imagens(self, path):
         """
         Carrega e redimensiona várias imagens para a interface do aplicativo.
 
@@ -71,39 +72,41 @@ class Notebook(ttk.Notebook):
         calendário, WhatsApp, upload, mostrar, refresh e enviar, cada uma com tamanhos
         designados.
         """
+        base_path = os.path.join(path, '_internal', 'data')
+        print(base_path)
 
         # Carrega e redimensiona a imagem de conexão (arquivo PNG)
-        imagem_agente = Image.open(os.path.join(base_path, 'data', 'agent.png'))
+        imagem_agente = Image.open(os.path.join(base_path, 'agent.png'))
         imagem_agente = imagem_agente.resize((24, 24), Image.Resampling.LANCZOS)
         self.icone_agente = ImageTk.PhotoImage(imagem_agente)
 
         # Carrega e redimensiona a imagem de upload (arquivo PNG)
-        imagem_calendario = Image.open(os.path.join(base_path, 'data', 'calendar.png'))
+        imagem_calendario = Image.open(os.path.join(base_path, 'calendar.png'))
         imagem_calendario = imagem_calendario.resize((12, 12), Image.Resampling.LANCZOS)
         self.icone_calendario = ImageTk.PhotoImage(imagem_calendario)
 
         # Carrega e redimensiona a imagem do WhatsApp (arquivo GIF)
-        imagem_whats = Image.open(os.path.join(base_path, 'data', 'whatsapp.gif'))
+        imagem_whats = Image.open(os.path.join(base_path, 'whatsapp.gif'))
         imagem_whats = imagem_whats.resize((48, 48), Image.Resampling.LANCZOS)
         self.icone_whatsapp = ImageTk.PhotoImage(imagem_whats)
 
         # Carrega e redimensiona a imagem de upload (arquivo PNG)
-        imagem_upload = Image.open(os.path.join(base_path, 'data', 'upload.png'))
+        imagem_upload = Image.open(os.path.join(base_path, 'upload.png'))
         imagem_upload = imagem_upload.resize((24, 24), Image.Resampling.LANCZOS)
         self.icone_upload = ImageTk.PhotoImage(imagem_upload)
 
         # Carrega e redimensiona a imagem de visualização (arquivo PNG)
-        imagem_show = Image.open(os.path.join(base_path, 'data', 'show.png'))
+        imagem_show = Image.open(os.path.join(base_path, 'show.png'))
         imagem_show = imagem_show.resize((24, 24), Image.Resampling.LANCZOS)
         self.icone_show = ImageTk.PhotoImage(imagem_show)
 
         # Carrega e redimensiona a imagem de visualização (arquivo PNG)
-        imagem_refresh = Image.open(os.path.join(base_path, 'data', 'refresh.png'))
+        imagem_refresh = Image.open(os.path.join(base_path, 'refresh.png'))
         imagem_refresh = imagem_refresh.resize((24, 24), Image.Resampling.LANCZOS)
         self.icone_refresh = ImageTk.PhotoImage(imagem_refresh)
 
         # Carrega e redimensiona a imagem de visualização (arquivo PNG)
-        imagem_send = Image.open(os.path.join(base_path, 'data', 'send.png'))
+        imagem_send = Image.open(os.path.join(base_path, 'send.png'))
         imagem_send = imagem_send.resize((24, 24), Image.Resampling.LANCZOS)
         self.icone_send = ImageTk.PhotoImage(imagem_send)
     def atualizar_status(self, texto, cor):
