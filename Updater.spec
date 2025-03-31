@@ -2,21 +2,11 @@
 
 
 a = Analysis(
-    ['app/main.py'],
+    ['app/update.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ('data/*.png', 'data'),
-        ('data/*.gif', 'data'),
-        ('version.txt', '.'),
-        ('updaterversion.txt', '.')
-        ],
-    hiddenimports=[
-        'PIL',
-        'PIL.Image',
-        'PIL.ImageTk',
-        'PIL._tkinter_finder'
-    ],
+    datas=[],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -29,26 +19,20 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
-    exclude_binaries=True,
-    name='AutomacaoWhatsapp',
+    name='update',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='AutomacaoWhatsapp',
 )

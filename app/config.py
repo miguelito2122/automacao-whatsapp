@@ -4,8 +4,11 @@ Módulo que contém as configurações do programa.
 
 import os
 import sys
+import subprocess
 import tkinter as tk
 from tkinter import messagebox
+
+import requests
 
 class ToolTip:
     def __init__(self, widget, text):
@@ -142,3 +145,55 @@ def printar_arquivos(base_path):
     for root, dirs, files in os.walk(base_path):
         for file in files:
             print(os.path.join(root, file))
+
+def checar_updater(base_path):
+    """
+    Atualiza o aplicativo verificando se há uma versão mais recente no repositório.
+
+    Se o arquivo update.py existir, ele é executado com o interpretador Python para
+    verificar se há uma versão mais recente do aplicativo no repositório. Se uma versão
+    mais recente for encontrada, o aplicativo é atualizado automaticamente.
+
+    :return: None
+    """
+    repo_url = 'https://raw.githubusercontent.com/miguelito2122/automacao-whatsapp/refs/heads/main/'
+    versao_remota = repo_url + 'updaterversion.txt'
+    try:
+        if getattr(sys, 'frozen', False):
+            update_exec = os.path.join(base_path, 'update.exe')
+            version_txt = os.path.join(base_path, '_internal', 'updaterversion.txt')
+            print('release\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
+        else:
+            update_exec = os.path.join(base_path, 'app', 'update.py')
+            version_txt = os.path.join(base_path, 'updaterversion.txt')
+            print('debug\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
+    except AttributeError as e:
+        launch_error('Erro ao obter os scripts e txt (root.py)', e)
+
+    if os.path.exists(update_exec):
+        try:
+            response = requests.get(versao_remota, timeout=10)
+        except requests.exceptions.RequestException as e:
+            launch_error('Erro ao obter versão remota (root.py)', e)
+        if response.status_code == 200:
+            versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
+            if response.content.decode('utf-8') != versao_atual:
+                return True
+            else:
+                messagebox.showinfo('Atualização',
+                                    'A versão mais recente do Updater ja foi instalada')
+                return False
+    else:
+        launch_error('Arquivo update.py nao encontrado', 'RaisedError')
+
+def atualizar_updater(base_path):
+    """
+    Atualiza o updater.exe do base_path.
+
+    Se o arquivo update.py ou update.exe existir, ele é sobrescrito com o
+    último release do update.exe da versão atual do repositório.
+
+    :param base_path: O diretório base do aplicativo.
+
+    :return: None
+    """

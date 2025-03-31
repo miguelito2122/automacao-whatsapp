@@ -1,14 +1,14 @@
 """
 Este script é responsável por atualizar o aplicativo para a última versão disponível no repositório remoto.
 """
-
+import sys
+from pathlib import Path
 import os
 import shutil
 import zipfile
 import tkinter as tk
 from tkinter import scrolledtext
 import requests
-from packaging.version import Version, InvalidVersion
 
 # ==========================
 # Funções de Download e Mock
@@ -96,104 +96,42 @@ def clean_directory(directory, console, exclude_files=None):
     console.insert(tk.END, "Limpeza concluída.\n")
 
 # ==========================
-# Funções de Verificação de Versão
-# ==========================
-
-def check_version(repo_url, app_path, console, branch="main"):
-    """Verifica se a versão local é diferente da versão remota."""
-    console.insert(tk.END, f"Verificando versão na branch '{branch}'...\n")
-    # Construindo o caminho para o arquivo de versão remota
-    archive_path = f"archive/refs/heads/{branch}.zip"
-    if archive_path in repo_url:
-        version_url = repo_url.replace(archive_path, f"raw/{branch}/version.txt")
-    else:
-        console.insert(tk.END, "Erro: O repo_url não contém",
-                         f"o caminho esperado para a branch '{branch}'.\n")
-        raise ValueError("The repo_url does not contain",
-                         f"the expected archive path for branch '{branch}'.")
-    try:
-        # Obter a versão remota
-        response = requests.get(version_url, timeout=10)
-        if response.status_code != 200:
-            console.insert(tk.END, f"Erro ao verificar a versão remota: {response.status_code}\n")
-            return False
-        remote_version = response.text.strip()
-        if not remote_version:
-            console.insert(tk.END, "Aviso: A versão remota está vazia. Parando a instalação...\n")
-            raise ValueError("A versão remota está vazia.")
-        console.insert(tk.END, f"Versão remota na branch '{branch}':",
-                        f"{remote_version}\n") # Exemplo: '1.0.0'
-
-        # Obter a versão local
-        local_version_path = os.path.join(app_path, 'version.txt')
-        if not os.path.exists(local_version_path):
-            console.insert(tk.END, "Aviso: O arquivo de versão local não foi encontrado.",
-                            "Continuando a instalação...\n")
-            return True
-        with open(local_version_path, 'r', encoding='utf-8') as file:
-            local_version = file.read().strip()
-        if not local_version:
-            console.insert(tk.END, "Aviso: O arquivo de versão local está vazio.",
-                            "Continuando a instalação...\n")
-            return True
-        console.insert(tk.END, f"Versão local: {local_version}\n")
-
-        try:
-            if Version(local_version) == Version(remote_version):
-                console.insert(tk.END, "A versão local já está atualizada.\n")
-                return False
-            else:
-                console.insert(tk.END, "Uma nova versão está disponível.\n")
-                return True
-        except InvalidVersion as e:
-            console.insert(tk.END, f"Erro ao comparar as versões: {e}\n")
-            raise ValueError(f"Erro ao comparar as versões: {e}") from e
-    except requests.exceptions.RequestException as e:
-        console.insert(tk.END, f"Erro ao verificar a versão remota: {e}\n")
-        raise ValueError(f"Erro ao verificar a versão remota: {e}") from e
-    
-# ==========================
 # Função Principal de Atualização
 # ==========================
 
-def update_application(repo_url, repo_path, console):
+def update_application(repo_url, repo_path, console, debug=False):
     """Gerencia o processo de atualização do aplicativo."""
     try:
         console.insert(tk.END, "Iniciando atualização...\n")
-        if not check_version(repo_url, repo_path, console, branch='main'):
-            console.insert(tk.END, "Nenhuma atualização necessária. Processo interrompido.\n")
-            return
 
         console.insert(tk.END, "Iniciando o download do último release...\n")
         # Diretório de download movido para a raiz do projeto
-        download_path = os.path.join(repo_path, 'update')
+        download_path = os.path.join(repo_path, 'release')
         os.makedirs(download_path, exist_ok=True)
 
-        mocking = False  # Altere para False para usar o download real
-
-        if mocking:
-            zip_path = mock_download_latest_release(download_path, console)
+        if debug:
+            mock_download_latest_release(download_path, console)
         else:
-            zip_path = download_latest_release(repo_url, download_path, console)
+            download_latest_release(repo_url, download_path, console)
 
-        # Limpar o diretório 'app' antes da atualização
-        app_path = os.path.join(repo_path, 'app')
-        clean_directory(app_path, console, exclude_files=[
-            'update.py'
-        ])
+        # # Limpar o diretório 'app' antes da atualização
+        # app_path = os.path.join(repo_path, 'app')
+        # clean_directory(app_path, console, exclude_files=[
+        #     'update.py'
+        # ])
 
-        data_path = os.path.join(repo_path, 'data')
-        clean_directory(data_path, console, exclude_files=[
-            'planilhas'
-        ])
-        extract_zip_item(zip_path, app_path, 'app', console)
-        extract_zip_item(zip_path, data_path, 'data', console)
-        shutil.rmtree(download_path)
-        # Atualizar o arquivo de versão local
-        version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
-        response = requests.get(version_url, timeout=10)
-        with open(os.path.join(repo_path, 'version.txt'), 'w', encoding='utf-8') as file:
-            file.write(response.text.strip())
+        # data_path = os.path.join(repo_path, 'data')
+        # clean_directory(data_path, console, exclude_files=[
+        #     'planilhas'
+        # ])
+        # extract_zip_item(zip_path, app_path, 'app', console)
+        # extract_zip_item(zip_path, data_path, 'data', console)
+        # shutil.rmtree(download_path)
+        # # Atualizar o arquivo de versão local
+        # version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
+        # response = requests.get(version_url, timeout=10)
+        # with open(os.path.join(repo_path, 'version.txt'), 'w', encoding='utf-8') as file:
+        #     file.write(response.text.strip())
         console.insert(tk.END, "Atualização concluída com sucesso!\n")
     except (requests.exceptions.RequestException, ValueError, OSError, PermissionError) as e:
         console.insert(tk.END, f"Erro durante a atualização: {e}\n")
@@ -201,53 +139,88 @@ def update_application(repo_url, repo_path, console):
 # ==========================
 # Interface Gráfica
 # ==========================
+def centralizar_tela(tela):
+    """
+    Centraliza a janela na tela do monitor.
 
-def show_update_window():
+    Este método ajusta a posição de uma janela Tkinter para que ela seja centralizada
+    na tela do monitor, sem alterar o tamanho da janela. Calcula as coordenadas
+    necessárias considerando a largura e altura da janela e da tela.
+
+    :param tela: O objeto da janela Tkinter que será centralizado.
+    :return: A string contendo a nova geometria da janela no formato '+x+y'.
+    """
+    tela.update_idletasks()
+
+    # Calcula as coordenadas para centralização
+    largura_janela = tela.winfo_width()
+    altura_janela = tela.winfo_height()
+    largura_tela = tela.winfo_screenwidth()
+    altura_tela = tela.winfo_screenheight()
+
+    x = (largura_tela // 2) - (largura_janela // 2)
+    y = (altura_tela // 2) - (altura_janela // 2)
+
+    # Aplica a nova posição sem alterar o tamanho
+    return tela.geometry(f'+{x}+{y}')
+def show_update_window(debug=False):
     """Exibe a interface gráfica para o processo de atualização."""
     update_window = tk.Tk()
     update_window.title("Atualização do Aplicativo")
     update_window.geometry("400x350")
     update_window.resizable(False, False)
-    def centralizar_tela(tela):
-        tela.update_idletasks()
 
-        # Calcula as coordenadas para centralização
-        largura_janela = tela.winfo_width()
-        altura_janela = tela.winfo_height()
-        largura_tela = tela.winfo_screenwidth()
-        altura_tela = tela.winfo_screenheight()
-
-        x = (largura_tela // 2) - (largura_janela // 2)
-        y = (altura_tela // 2) - (altura_janela // 2)
-
-        # Aplica a nova posição sem alterar o tamanho
-        return tela.geometry(f'+{x}+{y}')
     centralizar_tela(update_window)
 
     status_label = tk.Label(update_window, text="Status: Atualizando...",
                             font=("Arial", 14, "bold"))
     status_label.pack(pady=10)
 
-    console = scrolledtext.ScrolledText(update_window, wrap=tk.WORD, 
+    console = scrolledtext.ScrolledText(update_window, wrap=tk.WORD,
                                         font=("Courier", 10), height=15, width=60)
     console.pack(padx=10, pady=10)
     console.insert(tk.END, "Preparando para atualizar...\n")
 
-    def start_update():
-        repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-        repo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        update_application(repo_url, repo_path, console)
-        status_label.config(text="Status: Atualização Concluída!")
-        close_button.config(state=tk.NORMAL)
+    if getattr(sys, 'frozen', False):
+        debug = True # Alterado para True para Testes
+        repo_path = os.path.join(os.path.dirname(sys.executable), '_internal')
+        print('release',repo_path)
+    else:
+        debug = True
+        repo_path = Path(__file__).resolve().parent.parent
+        print('debug',repo_path)
 
-    update_window.after(200, start_update)
-    close_button = tk.Button(update_window, text="Fechar",
+    def start_update(debug=False):
+        """Inicia o processo de atualização."""
+        repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
+
+        try:
+            update_application(repo_url, repo_path, console, debug)
+            status_label.config(text="Status: Atualização Concluída!")
+            close_button.config(state=tk.NORMAL)
+        except Exception as e:
+            console.insert(tk.END, f"Erro durante a atualização: {e}\n")
+
+    button_frame = tk.Frame(update_window)
+    button_frame.pack(pady=5)
+
+    if debug:
+        start_update_button = tk.Button(button_frame, text="Iniciar Atualização",
+                                        command=lambda: start_update(debug=True))
+        start_update_button.pack(pady=10, side='left')
+
+    close_button = tk.Button(button_frame, text="Fechar",
                              command=update_window.destroy, state='disabled')
-    close_button.pack(pady=10)
+    close_button.pack(pady=10, side='right')
+
     update_window.mainloop()
+
+    if not debug:
+        update_window.after(200, start_update)
 
 if __name__ == '__main__':
     show_update_window()
+
 
 # ==========================
 # Fim do Script

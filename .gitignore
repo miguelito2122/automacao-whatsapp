@@ -2,7 +2,7 @@
 credenciais-cripto.key
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 *.pyc
@@ -12,8 +12,9 @@ __pycache__/
 .vscode
 
 # Distribuição / packaging / PyInstaller
-build/
+build
 dist
+update
 releases
 
 # Ambientes / envs
