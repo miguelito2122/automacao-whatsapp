@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=['config', 'security'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='update',
+    name='Updater',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -36,3 +36,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
+

@@ -4,7 +4,7 @@ Módulo que contém as configurações do programa.
 
 import os
 import sys
-import subprocess
+from threading import Thread
 import tkinter as tk
 from tkinter import messagebox
 
@@ -161,10 +161,12 @@ def checar_updater(base_path):
     try:
         if getattr(sys, 'frozen', False):
             update_exec = os.path.abspath(os.path.join(base_path, 'update'))
-            version_txt = os.path.abspath(os.path.join(base_path, '_internal/','updaterversion.txt'))
+            version_txt = os.path.abspath(os.path.join(base_path,
+                                                       '_internal/','updaterversion.txt'))
             print('release\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
         else:
-            update_exec = os.path.abspath(os.path.join(base_path, 'app', 'update.py'))
+            update_exec = os.path.abspath(os.path.join(base_path,
+                                                       'app', 'update.py'))
             version_txt = os.path.abspath(os.path.join(base_path, 'updaterversion.txt'))
             print('debug\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
     except AttributeError as e:
@@ -190,8 +192,7 @@ def checar_updater(base_path):
         messagebox.showinfo('Atualização',
                             'A versão mais recente do Updater ja foi instalada')
         return False
-
-
+    
 def atualizar_updater(base_path):
     """
     Atualiza o updater.exe do base_path.
@@ -204,3 +205,131 @@ def atualizar_updater(base_path):
     :return: None
     """
     pass
+
+def timed_input(prompt, timeout):
+    """
+    Obtém a entrada do usuário com um limite de tempo.
+
+    Exibe um prompt para o usuário e aguarda a entrada por um tempo
+    especificado. Se o usuário não fornecer uma entrada dentro do tempo
+    limite, a função retorna None. Caso contrário, retorna a entrada 
+    convertida para minúsculas e sem espaços extras.
+
+    Args:
+        prompt (str): Mensagem a ser exibida ao usuário.
+        timeout (float): Tempo máximo em segundos para aguardar a entrada.
+
+    Returns:
+        str or None: A entrada do usuário em minúsculas ou None se o tempo
+        limite for atingido.
+    """
+
+    result = []
+    def get_input():
+        try:
+            inp = input(prompt)
+            result.append(inp.strip().lower())
+        except Exception as e:
+            result.append('')
+
+    input_thread = Thread(target=get_input)
+    input_thread.daemon = True
+    input_thread.start()
+    input_thread.join(timeout)
+
+    if input_thread.is_alive():
+        return None  # Timeout ocorreu
+    else:
+        return True if result else None
+
+def centralizar_tela(tela: tk.Tk):
+    """
+    Centraliza a janela na tela.
+    """
+    tela.update_idletasks()
+    largura_janela = tela.winfo_width()
+    altura_janela = tela.winfo_height()
+    largura_tela = tela.winfo_screenwidth()
+    altura_tela = tela.winfo_screenheight()
+    x = (largura_tela // 2) - (largura_janela // 2)
+    y = (altura_tela // 2) - (altura_janela // 2)
+    tela.geometry(f'+{x}+{y}')
+
+def log(console, mensagem: str):
+    """Insere uma mensagem no widget de log."""
+    if console is not None:
+        console.insert(tk.END, mensagem + "\n")
+        console.see(tk.END)
+    else:
+        print(mensagem)
+
+def ensure_directory(directory: str, console=None):
+    """Garante que o diretório exista."""
+    try:
+        os.makedirs(directory, exist_ok=True)
+        log(console, f"Diretório '{directory}' verificado/criado.")
+    except Exception as e:
+        log(console, f"Erro ao criar diretório '{directory}': {e}")
+
+def read_file_bytes(file_path: str, console=None) -> bytes:
+    """Lê um arquivo em modo binário e retorna seu conteúdo."""
+    try:
+        with open(file_path, 'rb') as f:
+            data = f.read()
+        log(console, f"Arquivo lido: {file_path}")
+        return data
+    except Exception as e:
+        log(console, f"Erro ao ler arquivo '{file_path}': {e}")
+        return None
+
+def write_file_bytes(file_path: str, data: bytes, console=None):
+    """Escreve dados binários em um arquivo."""
+    try:
+        with open(file_path, 'wb') as f:
+            f.write(data)
+        log(console, f"Arquivo escrito: {file_path}")
+    except Exception as e:
+        log(console, f"Erro ao escrever arquivo '{file_path}': {e}")
+class ChaveAPIEntry(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Inserir Chave API")
+        self.geometry("300x100")
+        self.resizable(False, False)
+        centralizar_tela(self)
+
+        self.result = None
+
+        # Frame principal
+        frame = tk.Frame(self)
+        frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+        # Entry para inserir a chave
+        self.entry = tk.Entry(frame, width=40)
+        self.entry.pack(pady=(0, 10))
+
+        # Frame para os botões
+        btn_frame = tk.Frame(frame)
+        btn_frame.pack()
+
+        # Botão OK
+        ok_btn = tk.Button(btn_frame, text="OK", command=self.on_ok)
+        ok_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        # Botão Cancelar
+        cancel_btn = tk.Button(btn_frame, text="Cancelar", command=self.on_cancel)
+        cancel_btn.pack(side=tk.LEFT)
+
+        # Focar no Entry e esperar a janela ser fechada
+        self.entry.focus_set()
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self.on_cancel)
+        self.wait_window(self)
+
+    def on_ok(self):
+        self.result = self.entry.get()
+        self.destroy()
+
+    def on_cancel(self):
+        self.result = None
+        self.destroy()

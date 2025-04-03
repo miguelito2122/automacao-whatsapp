@@ -1,5 +1,6 @@
 # Senhas
-credenciais-cripto.key
+*.key
+*.crypto
 
 # Byte-compiled / optimized / DLL files
 __pycache__

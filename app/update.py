@@ -1,228 +1,470 @@
+#!/usr/bin/env python3
 """
-Este script é responsável por atualizar o aplicativo para a última versão disponível no repositório remoto.
+Este script é responsável por atualizar o aplicativo para a última versão disponível
+no repositório remoto, utilizando uma estrutura modular e organizada para facilitar a
+manutenção e a reutilização das funções.
 """
+
 import sys
-from pathlib import Path
 import os
 import shutil
 import zipfile
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, messagebox, filedialog
+from pathlib import Path
 import requests
 
-# ==========================
-# Funções de Download e Mock
-# ==========================
+# Importa funções de segurança (estas funções devem estar implementadas em módulos externos)
+from security import gerar_chave, criptografar_credencial, descriptografar_credencial, obter_documento_crypto, obter_chave
+from config import timed_input, ChaveAPIEntry, centralizar_tela, log, write_file_bytes, ensure_directory
 
-def download_latest_release(repo_url, download_path, console):
-    """Faz o download do último release do repositório remoto."""
-    console.insert(tk.END, f"Baixando o último release de: {repo_url}\n")
+# =====================================================
+# FUNÇÕES DE DOWNLOAD, EXTRAÇÃO E LIMPEZA
+# =====================================================
+
+def download_latest_release(repo_url: str, download_path: str, console=None) -> str:
+    """
+    Faz o download do último release do repositório remoto e salva em download_path.
+    Retorna o caminho para o arquivo ZIP baixado.
+    """
+    log(console, f"Baixando último release de: {repo_url}")
     try:
         response = requests.get(repo_url, timeout=10)
     except requests.exceptions.RequestException as e:
-        console.insert(tk.END, f"Erro de conexão: {e}\n")
+        log(console, f"Erro de conexão: {e}")
         raise ValueError(f"Erro de conexão: {e}") from e
-    console.insert(tk.END, f"Status da resposta HTTP: {response.status_code}\n")
-    if response.status_code != 200:
-        console.insert(tk.END, f"Erro ao baixar o arquivo: {response.status_code}\n")
-        raise ValueError(f"Erro ao baixar o arquivo: {response.status_code}")
-    if not response.content:    
-        console.insert(tk.END, "Erro: O conteúdo do arquivo está vazio.\n")
-        raise ValueError("O conteúdo do arquivo está vazio.")
+
+    log(console, f"Status HTTP: {response.status_code}")
+    if response.status_code != 200 or not response.content:
+        log(console, "Erro ao baixar o arquivo ou arquivo vazio.")
+        raise ValueError("Erro no download ou conteúdo vazio.")
+
     zip_path = os.path.join(download_path, 'latest_release.zip')
-    with open(zip_path, 'wb') as file:
-        file.write(response.content)
+    write_file_bytes(zip_path, response.content, console)
     file_size = os.path.getsize(zip_path)
-    console.insert(tk.END, f"Tamanho do arquivo baixado: {file_size} bytes\n")
+    log(console, f"Tamanho do arquivo baixado: {file_size} bytes")
     if file_size == 0:
-        console.insert(tk.END, "Erro: O arquivo baixado está vazio.\n")
         raise ValueError("O arquivo baixado está vazio.")
-    console.insert(tk.END, "Download concluído.\n")
+    log(console, "Download concluído.")
     return zip_path
 
-def mock_download_latest_release(download_path, console):
-    """Mock do processo de download para testes."""
-    console.insert(tk.END, "Mockando o download do último release...\n")
+def mock_download_latest_release(download_path: str, console=None) -> str:
+    """
+    Cria um arquivo ZIP de mock para testes.
+    """
+    log(console, "Mockando o download do último release...")
     zip_path = os.path.join(download_path, 'latest_release.zip')
     with zipfile.ZipFile(zip_path, 'w') as zip_ref:
         zip_ref.writestr('dummy_file.txt', 'conteúdo de teste')
         zip_ref.writestr('config.json', '{"key": "value"}')
-        zip_ref.writestr('README.md', '# Arquivo de teste\nEste é um mock de atualização.')
-    console.insert(tk.END, f"Mock concluído. Arquivo ZIP criado em: {zip_path}\n")
+        zip_ref.writestr('README.md', '# Arquivo de teste\nMock de atualização.')
+    log(console, f"Mock concluído. Arquivo ZIP criado em: {zip_path}")
     return zip_path
 
-# ==========================
-# Funções de Manipulação de Arquivos
-# ==========================
-
-def extract_zip_item(zip_path, extract_to, item, console):
-    """Extrai os arquivos de um ZIP para o diretório especificado."""
-    console.insert(tk.END, f"Extraindo arquivos para {extract_to}...\n")
+def extract_zip_item(zip_path: str, extract_to: str, item: str, console=None):
+    """
+    Extrai arquivos do ZIP que estejam dentro do diretório especificado (item)
+    e os salva em extract_to.
+    """
+    log(console, f"Extraindo arquivos de '{item}' para {extract_to}...")
     if not zipfile.is_zipfile(zip_path):
-        console.insert(tk.END, "Erro: O arquivo baixado não é um arquivo ZIP válido.\n")
-        raise ValueError("O arquivo baixado não é um arquivo ZIP válido.")
+        raise ValueError("O arquivo baixado não é um ZIP válido.")
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         for file in zip_ref.namelist():
-            if file.startswith(f'automacao-whatsapp-main/{item}/') and not file.endswith('/'):
+            prefix = f'automacao-whatsapp-main/{item}/'
+            if file.startswith(prefix) and not file.endswith('/'):
+                # Ignora o arquivo de update
                 if file.endswith('update.py'):
                     continue
-
-                relative_path = os.path.relpath(file, f'automacao-whatsapp-main/{item}/')
+                relative_path = os.path.relpath(file, prefix)
                 target_path = os.path.join(extract_to, relative_path)
-
-                os.makedirs(os.path.dirname(target_path), exist_ok=True)
-
+                ensure_directory(os.path.dirname(target_path), console)
                 with zip_ref.open(file) as source, open(target_path, 'wb') as target:
                     shutil.copyfileobj(source, target)
+    log(console, "Extração concluída.")
 
-    console.insert(tk.END, "Extração concluída.\n")
-
-def clean_directory(directory, console, exclude_files=None):
-    """Limpa o diretório antes da atualização, preservando arquivos essenciais."""
+def clean_directory(directory: str, console=None, exclude_files: list = None):
+    """
+    Limpa o diretório, removendo arquivos e subdiretórios, exceto os especificados em exclude_files.
+    """
     if exclude_files is None:
         exclude_files = []
-    console.insert(tk.END, f"Limpando o diretório {directory} antes da atualização...\n")
+    log(console, f"Limpando o diretório {directory}...")
     for item in os.listdir(directory):
-        item_path = os.path.join(directory, item)
         if item in exclude_files:
             continue
+        item_path = os.path.join(directory, item)
         try:
             if os.path.isfile(item_path):
                 os.remove(item_path)
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)
-        except (OSError, PermissionError) as e:
-            console.insert(tk.END, f"Erro ao remover {item_path}: {e}\n")
-    console.insert(tk.END, "Limpeza concluída.\n")
-
-# ==========================
-# Função Principal de Atualização
-# ==========================
-
-def update_application(repo_url, repo_path, console, debug_mode=False):
-    """Gerencia o processo de atualização do aplicativo."""
-    try:
-        console.insert(tk.END, "Iniciando atualização...\n")
-
-        console.insert(tk.END, "Iniciando o download do último release...\n")
-        # Diretório de download movido para a raiz do projeto
-        download_path = os.path.join(repo_path, 'release')
-        os.makedirs(download_path, exist_ok=True)
-
-        if debug_mode:
-            mock_download_latest_release(download_path, console)
-        else:
-            download_latest_release(repo_url, download_path, console)
-
-        # # Limpar o diretório 'app' antes da atualização
-        # app_path = os.path.join(repo_path, 'app')
-        # clean_directory(app_path, console, exclude_files=[
-        #     'update.py'
-        # ])
-
-        # data_path = os.path.join(repo_path, 'data')
-        # clean_directory(data_path, console, exclude_files=[
-        #     'planilhas'
-        # ])
-        # extract_zip_item(zip_path, app_path, 'app', console)
-        # extract_zip_item(zip_path, data_path, 'data', console)
-        # shutil.rmtree(download_path)
-        # # Atualizar o arquivo de versão local
-        # version_url = repo_url.replace('archive/refs/heads/main.zip', 'raw/main/version.txt')
-        # response = requests.get(version_url, timeout=10)
-        # with open(os.path.join(repo_path, 'version.txt'), 'w', encoding='utf-8') as file:
-        #     file.write(response.text.strip())
-        console.insert(tk.END, "Atualização concluída com sucesso!\n")
-    except (requests.exceptions.RequestException, ValueError, OSError, PermissionError) as e:
-        console.insert(tk.END, f"Erro durante a atualização: {e}\n")
-
-# ==========================
-# Interface Gráfica
-# ==========================
-def centralizar_tela(tela):
-    """
-    Centraliza a janela na tela do monitor.
-
-    Este método ajusta a posição de uma janela Tkinter para que ela seja centralizada
-    na tela do monitor, sem alterar o tamanho da janela. Calcula as coordenadas
-    necessárias considerando a largura e altura da janela e da tela.
-
-    :param tela: O objeto da janela Tkinter que será centralizado.
-    :return: A string contendo a nova geometria da janela no formato '+x+y'.
-    """
-    tela.update_idletasks()
-
-    # Calcula as coordenadas para centralização
-    largura_janela = tela.winfo_width()
-    altura_janela = tela.winfo_height()
-    largura_tela = tela.winfo_screenwidth()
-    altura_tela = tela.winfo_screenheight()
-
-    x = (largura_tela // 2) - (largura_janela // 2)
-    y = (altura_tela // 2) - (altura_janela // 2)
-
-    # Aplica a nova posição sem alterar o tamanho
-    return tela.geometry(f'+{x}+{y}')
-def show_update_window(debug_mode, repo_path):
-    """Exibe a interface gráfica para o processo de atualização."""
-    update_window = tk.Tk()
-    update_window.title("Atualização do Aplicativo")
-    update_window.geometry("400x350")
-    update_window.resizable(False, False)
-    path = repo_path
-
-    centralizar_tela(update_window)
-
-    status_label = tk.Label(update_window, text="Status: Atualizando...",
-                            font=("Arial", 14, "bold"))
-    status_label.pack(pady=10)
-
-    console = scrolledtext.ScrolledText(update_window, wrap=tk.WORD,
-                                        font=("Courier", 10), height=15, width=60)
-    console.pack(padx=10, pady=10)
-    console.insert(tk.END, "Preparando para atualizar...\n")
-
-    def start_update(debug_mode, base_directory):
-        """Inicia o processo de atualização."""
-        repo_url = 'https://github.com/miguelito2122/automacao-whatsapp/archive/refs/heads/main.zip'
-        try:
-            update_application(repo_url, base_directory, console, debug_mode)
-            status_label.config(text="Status: Atualização Concluída!")
-            close_button.config(state=tk.NORMAL)
         except Exception as e:
-            console.insert(tk.END, f"Erro durante a atualização: {e}\n")
+            log(console, f"Erro ao remover {item_path}: {e}")
+    log(console, "Limpeza concluída.")
 
-    button_frame = tk.Frame(update_window)
-    button_frame.pack(pady=5)
+# =====================================================
+# FUNÇÃO PRINCIPAL DE ATUALIZAÇÃO
+# =====================================================
 
-    if debug_mode:
-        start_update_button = tk.Button(button_frame, text="Iniciar Atualização",
-                                        command=lambda: start_update(debug_mode, path))
-        start_update_button.pack(pady=10, side='left')
+def update_application(repo_url: str, repo_path: str, console, debug_mode: bool = False):
+    """
+    Gerencia o processo de atualização do aplicativo.
+    """
+    try:
+        log(console, "Iniciando atualização...")
+        download_path = os.path.join(repo_path, 'release')
+        ensure_directory(download_path, console)
 
-    close_button = tk.Button(button_frame, text="Fechar",
-                             command=update_window.destroy, state='disabled')
-    close_button.pack(pady=10, side='right')
+        # Escolhe o download real ou o mock, conforme o modo
+        if debug_mode:
+            zip_path = mock_download_latest_release(download_path, console)
+        else:
+            zip_path = download_latest_release(repo_url, download_path, console)
 
-    update_window.mainloop()
+        # Se necessário, descompactar e limpar diretórios podem ser chamados aqui:
+        # app_path = os.path.join(repo_path, 'app')
+        # clean_directory(app_path, console, exclude_files=['update.py'])
+        # extract_zip_item(zip_path, app_path, 'app', console)
+        # shutil.rmtree(download_path)
 
-    if not debug_mode:
-        update_window.after(200, lambda: start_update(debug_mode, path))
+        log(console, "Atualização concluída com sucesso!")
+    except Exception as e:
+        log(console, f"Erro durante a atualização: {e}")
+
+# =====================================================
+# UTILITÁRIOS DE INTERFACE (Tkinter)
+# =====================================================
+
+
+class AlterarChavesAPIWindow(tk.Toplevel):
+    def __init__(self, parent, base_path: str):
+        """
+        Janela para alteração das chaves de API.
+        """
+        super().__init__(parent)
+        self.base_path = base_path
+        self.parent = parent
+
+        self.title("API Keys Manager")
+        self.geometry("300x200")
+        self.resizable(False, False)
+        centralizar_tela(self)
+
+        # Console de log interno
+        self.console = scrolledtext.ScrolledText(self, wrap=tk.WORD, font=("Courier", 10))
+        self.console.place(x=0, y=50, width=300, height=150)
+        log(self.console, "Selecione a chave a ser alterada...")
+
+        # Frame de botões
+        btn_frame = tk.Frame(self)
+        btn_frame.place(relx=0, rely=0, width=300, height=50)
+
+        btn_github = tk.Button(btn_frame, text="Github",
+                               command=lambda: self.modificar_tela('github'))
+        btn_github.place(rely=0.0, relx=0.05, relheight=1, relwidth=0.45)
+
+        btn_ia = tk.Button(btn_frame, text="IA",
+                           command=lambda: self.modificar_tela('ia'))
+        btn_ia.place(relx=0.5, rely=0.0, relheight=1, relwidth=0.45)
+
+    def modificar_tela(self, key_type: str):
+        """
+        Abre uma janela com opções para adicionar, alterar ou remover a chave do tipo especificado.
+        """
+        option_window = tk.Toplevel(self)
+        self.option_window = option_window
+        option_window.title("Alterar API Keys")
+        option_window.geometry("250x75")
+        option_window.resizable(False, False)
+        centralizar_tela(option_window)
+
+        btn_frame = tk.Frame(option_window)
+        btn_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        # Apenas o botão "Adicionar" está implementado para exemplificar a funcionalidade
+        add_button = tk.Button(btn_frame, text="Adicionar",
+                               command=lambda: self.adicionar_encript(key_type))
+        add_button.place(relx=0, rely=0, relwidth=0.33, relheight=1)
+        self.add_button = add_button
+
+        # Botões para "Alterar" e "Remover" podem ser implementados de forma similar
+        update_button = tk.Button(btn_frame, text="Alterar",
+                                  command=lambda: self.alterar_encrypt(key_type))
+        update_button.place(relx=0.33, rely=0, relwidth=0.33, relheight=1)
+        self.update_button = update_button
+
+        remove_button = tk.Button(btn_frame, text="Remover",
+                                  command=lambda: self.remover_encrypt(key_type))
+        remove_button.place(relx=0.66, rely=0, relwidth=0.33, relheight=1)
+        self.remove_button = remove_button
+
+        try:
+            chave_doc = obter_chave(self.base_path, key_type, self.console)
+            if not chave_doc or chave_doc is None:
+                if messagebox.askyesno("Chave Não Encontrada",
+                                       f"Chave de criptografia para {key_type} não encontrada. Deseja procurar?"
+                                       , parent=option_window):
+                    self.chave_crypto = filedialog.askopenfilename(
+                        initialdir=self.base_path,
+                        title="Selecione o arquivo de Chave",
+                        filetypes=[("Arquivos de Chave", "*.key")]
+                    )
+                    if not self.chave_crypto:
+                        log(self.console, "Operação cancelada!")
+                        option_window.destroy()
+                        raise Exception("Operação cancelada pelo usuário")
+                else:
+                    if messagebox.askyesno("Chave Não Encontrada",
+                                           f"Chave de criptografia para {key_type} não encontrada. Deseja gerar nova?"
+                                           , parent=option_window):
+                        self.chave_crypto = gerar_chave(self.base_path, self.console, key_type)
+                    else:
+                        log(self.console, "Operação cancelada!")
+                        option_window.destroy()
+                        raise Exception
+            else:
+                self.chave_crypto = chave_doc
+        except Exception as e:
+            log(self.console, f"Erro ao procurar chave: {e}")
+            option_window.destroy()
+            return
+
+        try:
+            crypto_doc = obter_documento_crypto(self.base_path, key_type, self.console)
+            if crypto_doc is None:
+                if messagebox.askyesno("Documento Não Encontrado",
+                                       f"Documento de criptografia para {key_type} não encontrado. Deseja procurar?"
+                                       , parent=option_window):
+                    self.crypto_doc = filedialog.askopenfilename(
+                        initialdir=self.base_path,
+                        title="Selecione o arquivo de Documento",
+                        filetypes=[("Arquivos de Documento", "*.crypto")]
+                    )
+                    if not self.crypto_doc:
+                        log(self.console, "Operação cancelada!")
+                        option_window.destroy()
+                        raise Exception("Operação cancelada pelo usuário")
+                else:
+                    log(self.console, "Sem Documento Cryptografado em disposição.")
+                    update_button.config(state=tk.DISABLED)
+                    remove_button.config(state=tk.DISABLED)
+                    self.crypto_doc = None
+            else:
+                self.crypto_doc = crypto_doc
+        except Exception as e:
+            log(self.console, f"Erro ao procurar documento: {e}")
+            option_window.destroy()
+            return
+
+    def adicionar_encript(self, key_type: str):
+        """
+        Tenta adicionar uma nova chave API para o key_type.
+        """
+
+        # Cria o diretório, se necessário
+        folder = 'keys' if getattr(sys, 'frozen', False) else 'docs'
+        doc_dir = os.path.join(self.base_path, folder)
+        ensure_directory(doc_dir, self.console)
+        doc_path = os.path.join(doc_dir, f'{key_type}.crypto')
+
+        try:
+            api_key = self.requisitar_chave(self.option_window)
+            log(self.console, "Encriptando chave...")
+            criptografada = criptografar_credencial(api_key, self.chave_crypto)
+            write_file_bytes(doc_path, criptografada, self.console)
+        except Exception as e:
+            log(self.console, f"Operação cancelada! Erro: {e}")
+            self.option_window.destroy()
+            return
+
+        self.update_button.config(state=tk.NORMAL)
+        self.remove_button.config(state=tk.NORMAL)
+        self.crypto_doc = doc_path
+        log(self.console, "Chave criptografada com sucesso!")
+
+    def alterar_encrypt(self, key_type: str):
+        if not messagebox.askokcancel("Alterar Chave",
+                               f"Tem certeza de que deseja alterar a chave (.key) para {key_type}?"):
+            return
+
+        with open(self.crypto_doc, 'rb') as f:
+            data = f.read()
+        try:
+            api_key = descriptografar_credencial(data, self.chave_crypto)
+        except Exception as e:
+            log(self.console, f"Erro ao descriptografar credencial: {e}")
+            return
+
+        change_window = tk.Toplevel(self.option_window)
+        change_window.title("Chaves")
+        change_window.geometry("200x100")
+        centralizar_tela(change_window)
+        self.change_window = change_window
+
+        button_frame = tk.Frame(change_window)
+        button_frame.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+
+        chave_button = tk.Button(button_frame, text="Alterar Chave",
+                                 command=lambda: self.alterar_encrypt_chave(key_type, api_key))
+        chave_button.pack(pady=(0, 5))
+
+        documento_button = tk.Button(button_frame, text="Alterar Documento",
+                                     command=lambda: self.alterar_api_keys(key_type))
+        documento_button.pack(pady=(0, 5))
+
+    def alterar_encrypt_chave(self, key_type: str, api_key: str):
+
+        folder = 'keys' if getattr(sys, 'frozen', False) else 'docs'
+        doc_dir = os.path.join(self.base_path, folder)
+        ensure_directory(doc_dir, self.console)
+        doc_path = os.path.join(doc_dir, f'{key_type}.crypto')
+
+        try:
+            nova_chave = gerar_chave(self.base_path, self.console, key_type)
+            self.chave_crypto = nova_chave
+        except Exception as e:
+            log(self.console, f"Erro ao gerar nova chave: {e}")
+            return
+
+        try:
+            log(self.console, "Encriptando chave...")
+            criptografada = criptografar_credencial(api_key, self.chave_crypto)
+            write_file_bytes(doc_path, criptografada, self.console)
+        except Exception as e:
+            log(self.console, f"Erro ao encriptar chave: {e}")
+            return
+
+    def alterar_api_keys(self, key_type: str):
+        if not messagebox.askokcancel("Alterar Chave",
+                                    f"Tem certeza de que deseja alterar a chave (.crypto) para {key_type}?"):
+            return
+
+        folder = 'keys' if getattr(sys, 'frozen', False) else 'docs'
+        doc_dir = os.path.join(self.base_path, folder)
+        ensure_directory(doc_dir, self.console)
+        doc_path = os.path.join(doc_dir, f'{key_type}.crypto')
+
+        try:
+            nova_chave = self.requisitar_chave(self.change_window)
+            log(self.console, "Encriptando chave...")
+            criptografada = criptografar_credencial(nova_chave, self.chave_crypto)
+            write_file_bytes(doc_path, criptografada, self.console)
+        except Exception as e:
+            log(self.console, f"Erro ao encriptar chave: {e}")
+            return
+
+    def remover_encrypt(self, key_type: str):
+        if not messagebox.askokcancel("Remover Chaves",
+                                    f"Tem certeza de que deseja remover as chaves para {key_type}?",
+                                    parent=self.option_window):
+            return
+        
+        if not messagebox.askokcancel("Remover Chaves",
+                                    f"Essa ação é definitiva e irá excluir ambos os documentos para {key_type}, tem certeza?",
+                                    parent=self.option_window):
+            return
+        
+        folder = 'keys' if getattr(sys, 'frozen', False) else 'docs'
+        doc_dir = os.path.join(self.base_path, folder)
+        ensure_directory(doc_dir, self.console)
+
+        try:
+            os.remove(os.path.join(doc_dir, f'{key_type}.crypto'))
+            os.remove(os.path.join(doc_dir, f'{key_type}.key'))
+            self.option_window.destroy()
+            log(self.console, "Chaves removidas com sucesso!")
+        except Exception as e:  
+            log(self.console, f"Erro ao remover chaves: {e}")
+            return
+
+    def requisitar_chave(self, window):
+        entry = ChaveAPIEntry(window).result
+        if not entry:
+            log(self.console, "Operação cancelada!")
+            window.destroy()
+            raise Exception
+        log(self.console, "Chave inserida com sucesso!")
+        return entry
+
+class UpdateWindow:
+    def __init__(self, debug_mode: bool, repo_path: str):
+        """
+        Inicializa a interface de atualização.
+        """
+        self.debug_mode = debug_mode
+        self.repo_path = repo_path
+
+        # Cria a janela principal
+        self.window = tk.Tk()
+        self.window.title("Atualização do Aplicativo")
+        self.window.geometry("450x300")
+        self.window.resizable(False, False)
+        centralizar_tela(self.window)
+
+        # Widget de log
+        self.console = scrolledtext.ScrolledText(self.window, wrap=tk.WORD,
+                                                   font=("Courier", 10))
+        self.console.place(x=0, y=0, width=450, height=250)
+        log(self.console, "Preparando para atualizar...")
+
+        # Frame de botões
+        self.button_frame = tk.Frame(self.window)
+        self.button_frame.place(x=0, y=250, width=450, height=50)
+
+        if self.debug_mode:
+            self._iniciar_debug()
+        else:
+            # Em release, o botão fechar inicia desabilitado
+            self.close_button = tk.Button(self.button_frame, text="Fechar",
+                                          command=self.window.destroy, state='disabled')
+            self.close_button.place(x=10, y=10, width=150, height=30)
+            self.window.after(200, self._start_update)
+
+    def _start_update(self):
+        """Inicia o processo de atualização."""
+        repo_url = 'https://raw.githubusercontent.com/miguelito2122/automacao-whatsapp/refs/heads/main/'
+        try:
+            update_application(repo_url, self.repo_path, self.console, self.debug_mode)
+            if hasattr(self, 'close_button'):
+                self.close_button.config(state=tk.NORMAL)
+        except Exception as e:
+            log(self.console, f"Erro durante a atualização: {e}")
+
+    def _iniciar_debug(self):
+        """Configura a interface para o modo debug."""
+        start_update_button = tk.Button(self.button_frame, text="Iniciar Atualização",
+                                        command=self._start_update)
+        start_update_button.place(x=50, y=10, width=150, height=30)
+
+        self.close_button = tk.Button(self.button_frame, text="Fechar",
+                                      command=self.window.destroy)
+        self.close_button.place(x=250, y=10, width=150, height=30)
+
+        # Abre a janela para alterar chaves API, se desejado
+        if messagebox.askyesno("Debug Mode", "Debug Mode ativado. Deseja alterar Chaves Api?"):
+            try:
+                AlterarChavesAPIWindow(self.window, self.repo_path)
+            except Exception as e:
+                log(self.console, f"Erro ao alterar chaves: {e}")
+
+    def show(self):
+        self.window.mainloop()
+
+# =====================================================
+# BLOCO PRINCIPAL
+# =====================================================
+
+def main():
+    if getattr(sys, 'frozen', False):
+        base_path = os.path.join(os.path.dirname(sys.executable), '_internal')
+        debug_mode_input = timed_input("Debug Mode? (s/n): ", 10)
+        DEBUG = debug_mode_input if debug_mode_input is not None else False
+        app = UpdateWindow(DEBUG, base_path)
+    else:
+        base_path = Path(__file__).resolve().parent.parent
+        app = UpdateWindow(True, str(base_path))
+    app.show()
 
 if __name__ == '__main__':
-    if getattr(sys, 'frozen', False):
-        DEBUG = True # Alterado para True para Testes
-        base_path = os.path.join(os.path.dirname(sys.executable), '_internal')
-        print('release', base_path)
-        show_update_window(DEBUG, base_path)
-    else:
-        DEBUG = True
-        base_path = Path(__file__).resolve().parent.parent
-        print('debug', base_path)
-        show_update_window(DEBUG, base_path)
-
-
-
-# ==========================
-# Fim do Script
-# ==========================
+    main()
