@@ -5,7 +5,7 @@ Módulo responsável por criar a aba de Check-in.
 import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, StringVar
-import pandas as pd
+from openpyxl import load_workbook
 from config import ToolTip
 from planilhas import JanelaEnvio
 
@@ -16,7 +16,7 @@ class AppCheckin(ttk.Frame):
         self.notebook = parent
         self.caminho_planilha = None
         self.carregar_widget()
-        self.documento = None  # Initialize 'documento' attribute
+        self.wb = None  # Initialize 'documento' attribute
         self.mes = None  # Initialize 'mes' attribute
         self.criar_tooltips()
         self.mensagem = None  # Initialize 'mensagem' attribute
@@ -147,19 +147,22 @@ class AppCheckin(ttk.Frame):
         )
         if caminho: # Verifica se o caminho não é vazio
             try:
-                self.documento = pd.read_excel(caminho, sheet_name=None) # Lê todas as abas
+                wb = load_workbook(caminho, data_only=True)
+                self.wb = wb
                 self.caminho_planilha = caminho
                 self.mes = self.mes_selecionado.get()[:3]
-                if self.mes in self.documento:
-                    self.atualizar_treeview(self.documento[self.mes]) # Atualiza o Treeview
+                if self.mes in wb.sheetnames:
+                    ws = wb[self.mes]
+                    self.atualizar_treeview(ws) # Atualiza o Treeview
             except (FileNotFoundError, ValueError) as e:
                 messagebox.showerror('Erro', f'Erro ao carregar planilha: {str(e)}')
     def mudar_mes(self, event):
         """ Método para mudar o mês selecionado no Combobox """
         if self.caminho_planilha:
             mes = self.mes_selecionado.get()[:3]  # Obtém o mês selecionado (3 primeiros caracteres)
-            if mes in self.documento:
-                self.atualizar_treeview(self.documento[mes]) # Atualiza o Treeview
+            if mes in self.wb.sheetnames:
+                ws = self.wb[mes]
+                self.atualizar_treeview(ws) # Atualiza o Treeview
             else:
                 messagebox.showerror('Erro', f'Sheet "{mes}" não encontrada na planilha!')
         else:
@@ -167,24 +170,25 @@ class AppCheckin(ttk.Frame):
     def atualizar_treeview(self, documento):
         """ Método para atualizar o Treeview com os dados da planilha """
         self.treeview_checkin.delete(*self.treeview_checkin.get_children()) # Limpa o Treeview
-        for index, row in documento.iterrows():
-            if index >= 11:  # Começa a partir da 12ª linha
-                data = row.iloc[1]  # Coluna B
-                nome = row.iloc[2]  # Coluna C
-                id_ = row.iloc[3]  # Coluna D
-                status = row.iloc[9]  # Coluna J
-                if isinstance(data,
-                   pd.Timestamp) or isinstance(data, datetime.datetime):
-                    data_formatada = data.strftime('%d/%m/%y')
-                else:
-                    data_formatada = str(data)
+        for i, row in enumerate(documento.iter_rows(min_row=13, values_only=True)):
+            data = row[1]   # Coluna B (índice 1)
+            nome = row[2]   # Coluna C
+            id_ = row[3]    # Coluna D
+            status = row[9] # Coluna J
 
-                if any([data, nome, id_, status]):  # Checa se algum valor é diferente de vazio
-                    self.treeview_checkin.insert(
-                        '',
-                        'end', 
-                        values=(data_formatada, nome, id_, status)
-                    )
+            # Formata data se for datetime
+            if isinstance(data, datetime.datetime):
+                data_formatada = data.strftime('%d/%m/%y')
+            else:
+                data_formatada = str(data) if data is not None else ''
+
+            # Apenas insere se tiver algum valor
+            if any([data, nome, id_, status]):
+                self.treeview_checkin.insert(
+                    '',
+                    'end',
+                    values=(data_formatada, nome, id_, status)
+                )
     def carregar_mensagem(self):
         """ Método para carregar a mensagem de um arquivo .txt """
         # Carregar mensagem
@@ -204,8 +208,8 @@ class AppCheckin(ttk.Frame):
             top = tk.Toplevel(self)
             top.title("Mensagem")
             text = tk.Text(top, wrap='word')
-            self.mensagem = self.editar_mensagem('{Nome}', '{Local}', '{Cliente}')
-            text.insert('1.0', self.mensagem)
+            mensagem = self.editar_mensagem('{Nome}', '{Local}', '{Cliente}')
+            text.insert('1.0', mensagem)
             text.config(state='disabled')
             text.pack(expand=1, fill='both')
         else:

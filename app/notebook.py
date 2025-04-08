@@ -13,6 +13,7 @@ atualiza o status do arquivo Excel atual na barra de status.
 """
 
 from tkinter import ttk, messagebox
+import tkinter as tk
 import os
 import sys
 try:
@@ -27,7 +28,7 @@ except ImportError as e:
     sys.exit(1)
 
 class Notebook(ttk.Notebook):
-    def __init__(self, parent, base_path=None):
+    def __init__(self, parent):
         """
         Inicializa o objeto Notebook com o pai parent.
 
@@ -36,9 +37,12 @@ class Notebook(ttk.Notebook):
         super().__init__(parent)
         self.parent = parent
         self.pack(fill='both', expand=True)
+        self.frame_conexao = None
+        self.frame_checkin = None
+        self.frame_checkout = None
         try:
-            self.path = base_path
-            self.carregar_imagens(self.path)
+            path = self.parent.main.img_path
+            self.carregar_imagens(path)
         except Exception as e:
             launch_error('Erro ao carregar imagens (notebook.py)', e)
         try:
@@ -61,7 +65,7 @@ class Notebook(ttk.Notebook):
         notebook.add(self.frame_conexao, text='Conexão')
         notebook.add(self.frame_checkin, state='normal', text='Check-in')
         notebook.add(self.frame_checkout, state='normal', text='Check-out')
-    def carregar_imagens(self, path):
+    def carregar_imagens(self, base_path):
         """
         Carrega e redimensiona várias imagens para a interface do aplicativo.
 
@@ -72,8 +76,7 @@ class Notebook(ttk.Notebook):
         calendário, WhatsApp, upload, mostrar, refresh e enviar, cada uma com tamanhos
         designados.
         """
-        base_path = os.path.join(path, '_internal', 'data')
-        print(base_path)
+
 
         # Carrega e redimensiona a imagem de conexão (arquivo PNG)
         imagem_agente = Image.open(os.path.join(base_path, 'agent.png'))
@@ -159,3 +162,9 @@ class Notebook(ttk.Notebook):
         except (OSError, IOError) as e:
             print(f"Erro ao atualizar status na planilha: {str(e)}")
             return False
+
+if __name__ == "__main__":
+    # Teste da classe Notebook
+    root = tk.Tk()
+    notebook = Notebook(root)
+    root.mainloop()

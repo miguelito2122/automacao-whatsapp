@@ -2,7 +2,7 @@ import os
 import sys
 
 from cryptography.fernet import Fernet
-from config import ensure_directory, read_file_bytes, log
+from config import ensure_directory, log
 
 def gerar_chave(base_path, console, key_type):
     """Gera e salva uma nova chave de criptografia"""
@@ -31,27 +31,6 @@ def criptografar_credencial(api_key, chave):
 def descriptografar_credencial(api_key_criptografada, chave):
     fernet = Fernet(chave)
     return fernet.decrypt(api_key_criptografada).decode('utf-8')
-
-def obter_chave(app_path: str, id: str, console=None) -> bytes:
-    """
-    Obtém a chave de criptografia para o identificador fornecido.
-    Procura o arquivo {id}.key na pasta 'keys' (release) ou 'docs' (debug).
-    Retorna a chave em bytes ou None se não encontrada.
-    """
-    folder = 'keys' if getattr(sys, 'frozen', False) else 'docs'
-    chave_dir = os.path.join(app_path, folder)
-    ensure_directory(chave_dir, console)
-    chave_path = os.path.join(chave_dir, f'{id}.key')
-    log(console, f"Caminho da chave: {chave_path}")
-
-    if not os.path.exists(chave_path):
-        log(console, f"Chave para '{id}' não encontrada.")
-        return None
-
-    chave = read_file_bytes(chave_path, console)
-    if chave is not None:
-        log(console, f"Chave atual para '{id}': {chave}\nGuarde-a em local seguro!")
-    return chave
 
 def obter_documento_crypto(app_path: str, id: str, console=None) -> bytes:
     """

@@ -6,11 +6,20 @@ import os
 import sys
 from threading import Thread
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk, scrolledtext
+
 
 import requests
 
 class ToolTip:
+    """
+    Classe que representa um tooltip para exibição de informações adicionais em widgets.
+
+    Args:
+        widget: O widget ao qual o tooltip ser  anexado.
+        text: O texto a ser exibido no tooltip.
+    """
+
     def __init__(self, widget, text):
         """
         Inicializa uma instância de ToolTip com um widget e um texto dados.
@@ -119,94 +128,62 @@ class ToolTip:
         if tw:
             tw.destroy()
 
+class SplashScreen:
+    """
+    Classe responsável por criar e gerenciar a tela de splash (carregamento)
+    do aplicativo, exibindo um console e uma barra de progresso.
+    """
+    def __init__(self, master: tk.Tk):
+        # Cria a janela de splash
+        self.window = tk.Toplevel(master)
+        self.window.title("Iniciando o aplicativo")
+        self.window.geometry("250x150")
+        self.window.resizable(False, False)
+        self.window.attributes('-topmost', True)
+        self.window.overrideredirect(True)
+
+        # Centraliza a janela de splash
+        center_window(self.window)
+
+        # Cria o console (scrolledtext)
+        self.console = scrolledtext.ScrolledText(
+            self.window, wrap=tk.WORD, font=("Courier", 8)
+        )
+        self.console.place(x=0, y=0, width=250, height=110)
+
+        # Cria a barra de progresso
+        self.progress = ttk.Progressbar(
+            self.window, orient="horizontal", mode="indeterminate", length=230
+        )
+        self.progress.place(x=10, y=120)
+
+    def start(self):
+        """Inicia a barra de progresso."""
+        self.progress.start(10)
+
+    def stop(self):
+        """Interrompe a barra de progresso."""
+        self.progress.stop()
+
+    def destroy(self):
+        """Destroi a janela de splash."""
+        self.window.destroy()
+
 def launch_error(msg, erro):
     """
     Exibe uma mensagem de erro em uma janela modal.
     
     Exibe uma janela de erro com o título "Erro", o texto da mensagem e o erro.
+    Args:
+        msg (str): Mensagem a ser exibida ao usuário.
+        erro (Exception): Mensagem de erro retornado.
+    Returns:
+        str: Retorna a mensagem de erro, formatada. 
     """
-
     messagebox.showerror('Erro', f'{msg}\nTipo de erro: {erro}')
     sys.exit(1)
 
-def printar_arquivos(base_path):
-    """
-    Imprime a lista de arquivos em um diretório e seus subdiretórios.
-
-    Percorre o diretório especificado por `base_path` e seus subdiretórios,
-    imprimindo o caminho absoluto de cada arquivo encontrado.
-
-    Args:
-        base_path (str): O diretório a ser percorrido.
-
-    Returns:
-        None
-    """
-    for root, dirs, files in os.walk(base_path):
-        for file in files:
-            print(os.path.join(root, file))
-
-def checar_updater(base_path):
-    """
-    Atualiza o aplicativo verificando se há uma versão mais recente no repositório.
-
-    Se o arquivo update.py existir, ele é executado com o interpretador Python para
-    verificar se há uma versão mais recente do aplicativo no repositório. Se uma versão
-    mais recente for encontrada, o aplicativo é atualizado automaticamente.
-
-    :return: None
-    """
-    repo_url = 'https://raw.githubusercontent.com/miguelito2122/automacao-whatsapp/refs/heads/main/'
-    versao_remota = repo_url + 'updaterversion.txt'
-    try:
-        if getattr(sys, 'frozen', False):
-            update_exec = os.path.abspath(os.path.join(base_path, 'update'))
-            version_txt = os.path.abspath(os.path.join(base_path,
-                                                       '_internal/','updaterversion.txt'))
-            print('release\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
-        else:
-            update_exec = os.path.abspath(os.path.join(base_path,
-                                                       'app', 'update.py'))
-            version_txt = os.path.abspath(os.path.join(base_path, 'updaterversion.txt'))
-            print('debug\n', "Update:", update_exec, '\n', "updaterversion:",version_txt)
-    except AttributeError as e:
-        launch_error('Erro ao obter os scripts e txt (root.py)', e)
-
-    if os.path.exists(update_exec):
-        print('update.py encontrado\n')
-    else:
-        launch_error('Arquivo update.exe nao encontrado', 'RaisedError')
-
-    try:
-        response = requests.get(versao_remota, timeout=10)
-    except requests.exceptions.RequestException as e:
-        launch_error('Erro ao obter versão remota (root.py)', e)
-
-    if response.status_code != 200:
-        launch_error('Erro ao obter versão remota (root.py)', 'HTTPError')
-
-    versao_atual = open(version_txt, 'r', encoding='utf-8').readline().strip()
-    if response.content.decode('utf-8') != versao_atual:
-        return True
-    else:
-        messagebox.showinfo('Atualização',
-                            'A versão mais recente do Updater ja foi instalada')
-        return False
-    
-def atualizar_updater(base_path):
-    """
-    Atualiza o updater.exe do base_path.
-
-    Se o arquivo update.py ou update.exe existir, ele é sobrescrito com o
-    último release do update.exe da versão atual do repositório.
-
-    :param base_path: O diretório base do aplicativo.
-
-    :return: None
-    """
-    pass
-
-def timed_input(prompt, timeout):
+def timed_input(prompt, timeout, default='n'):
     """
     Obtém a entrada do usuário com um limite de tempo.
 
@@ -229,8 +206,8 @@ def timed_input(prompt, timeout):
         try:
             inp = input(prompt)
             result.append(inp.strip().lower())
-        except Exception as e:
-            result.append('')
+        except AttributeError as e:
+            result.append(default)
 
     input_thread = Thread(target=get_input)
     input_thread.daemon = True
@@ -240,36 +217,61 @@ def timed_input(prompt, timeout):
     if input_thread.is_alive():
         return None  # Timeout ocorreu
     else:
-        return True if result else None
+        return result[0] if result else None
 
-def centralizar_tela(tela: tk.Tk):
+def center_window(window: tk.Tk):
     """
     Centraliza a janela na tela.
+
+    Args:
+        window (tk.Tk): A janela que deve ser centralizada.
+
+    Returns:
+        tuple: Uma tupla contendo a largura e a altura da janela.
     """
-    tela.update_idletasks()
-    largura_janela = tela.winfo_width()
-    altura_janela = tela.winfo_height()
-    largura_tela = tela.winfo_screenwidth()
-    altura_tela = tela.winfo_screenheight()
+    window.update_idletasks()
+    largura_janela = window.winfo_width()
+    altura_janela = window.winfo_height()
+    largura_tela = window.winfo_screenwidth()
+    altura_tela = window.winfo_screenheight()
     x = (largura_tela // 2) - (largura_janela // 2)
     y = (altura_tela // 2) - (altura_janela // 2)
-    tela.geometry(f'+{x}+{y}')
+    window.geometry(f'+{x}+{y}')
 
-def log(console, mensagem: str):
-    """Insere uma mensagem no widget de log."""
-    if console is not None:
-        console.insert(tk.END, mensagem + "\n")
-        console.see(tk.END)
-    else:
-        print(mensagem)
+    return largura_janela, altura_janela
 
 def ensure_directory(directory: str, console=None):
-    """Garante que o diretório exista."""
+    """
+    Garante que o diretório exista.
+    Retorna uma Mensagem para o console escolhido.
+    Se o diretório não existir, ele será criado.
+    Se ocorrer um erro ao criar o diretório, uma mensagem de erro será exibida.
+
+    Args:
+        directory (str): O caminho do diretório a ser verificado/criado.
+        console (tk.Text, optional): O widget de console onde a mensagem será exibida.
+        Se None, a mensagem será impressa no console padrão.
+
+    Returns:
+        None
+    
+    """
     try:
         os.makedirs(directory, exist_ok=True)
         log(console, f"Diretório '{directory}' verificado/criado.")
     except Exception as e:
         log(console, f"Erro ao criar diretório '{directory}': {e}")
+
+def log(console, mensagem: str):
+    """Insere uma mensagem no widget de log de forma segura."""
+    def inserir():
+        console.insert(tk.END, mensagem + "\n")
+        console.see(tk.END)
+
+    if console is not None:
+        console.after(0, inserir)  # Executa na thread principal
+    else:
+        print(mensagem)
 
 def read_file_bytes(file_path: str, console=None) -> bytes:
     """Lê um arquivo em modo binário e retorna seu conteúdo."""
@@ -290,6 +292,70 @@ def write_file_bytes(file_path: str, data: bytes, console=None):
         log(console, f"Arquivo escrito: {file_path}")
     except Exception as e:
         log(console, f"Erro ao escrever arquivo '{file_path}': {e}")
+        return None
+
+def buscar_arquivo(api_chave, nome_arquivo, console=None, custom_headers=None):
+    """
+    Busca um arquivo no repositório do GitHub com possibilidade de personalizar headers
+    
+    Parâmetros:
+        api_chave (str): Token de autenticação do GitHub
+        nome_arquivo (str): Nome do arquivo a ser buscado
+        console (objeto, opcional): Objeto para logging
+        custom_headers (dict, opcional): Headers adicionais ou substitutos
+    """
+    REPO_OWNER = 'miguelito2122'
+    REPO_NAME = 'automacao-whatsapp'
+    BRANCH = 'main'
+
+    # Headers base com valores padrão
+    base_headers = {
+        "Authorization": f"token {api_chave}",
+        "Accept": "application/vnd.github.v3.raw"
+    }
+
+    # Combina headers base com customizados (se fornecido)
+    headers = {**base_headers, **(custom_headers or {})}
+
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{nome_arquivo}?ref={BRANCH}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        if response.status_code == 200:
+            return response.content.decode('utf-8').strip()
+
+    except requests.exceptions.HTTPError as e:
+        error_msg = f"Erro ao buscar {nome_arquivo}: {e.response.status_code}"
+        if console:
+            log(console, error_msg)
+        launch_error(error_msg, e)
+    except Exception as e:
+        if console:
+            log(console, f"Erro na requisição: {str(e)}")
+        launch_error(f"Erro ao buscar {nome_arquivo}", e)
+
+    launch_error(f"Arquivo {nome_arquivo} não encontrado", "RaisedError")
+
+    return None
+
+def atualizar_updater(base_path):
+    """
+    Atualiza o updater.exe do base_path.
+
+    Se o arquivo update.py ou update.exe existir, ele é sobrescrito com o
+    último release do update.exe da versão atual do repositório.
+
+    :param base_path: O diretório base do aplicativo.
+
+    :return: None
+    """
+    pass
+
+
+
+
 class ChaveAPIEntry(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)

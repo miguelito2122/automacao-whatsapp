@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import ttk, StringVar, messagebox
 import datetime
 from tkcalendar import DateEntry
+from config import center_window
 
 class JanelaEnvio(tk.Toplevel):
     def __init__(self, main_app):
@@ -38,7 +39,7 @@ class JanelaEnvio(tk.Toplevel):
         self.driver = None
         self.title("Selecionar Intervalo")
         self.geometry("350x450")
-        self.main_app.notebook.parent.centralizar_tela(self)
+        center_window(self)
 
         # Variáveis para datas
         self.data_inicio = StringVar()
@@ -130,8 +131,8 @@ class JanelaEnvio(tk.Toplevel):
         """
         top = tk.Toplevel(self)
         top.title("Informações")
-        top.geometry("300x100")
-        self.main_app.notebook.parent.centralizar_tela(top)
+        top.geometry("300x150")
+        center_window(top)
 
         # Variáveis para armazenar os valores
 
@@ -220,4 +221,3 @@ class JanelaEnvio(tk.Toplevel):
                 messagebox.showwarning("Erro", "Conexão com o WhatsApp não está ativa!")
         else:
             messagebox.showwarning("Aviso", "Nenhuma mensagem carregada!")
-            
